@@ -12,12 +12,17 @@ def relatorio_fechamento_tecnicos_df(
     estados: List[str],
 ) -> pd.DataFrame:
     """
-    Retorna TODAS as ordens de serviço fechadas no período,
-    para todas as contas e estados informados.
+    Retorna ordens de serviço com término executado no período,
+    respeitando contas e estados (modelo real HubSoft).
     """
 
     dfs: list[pd.DataFrame] = []
-    estados_upper = [e.upper() for e in estados]
+
+    estados_upper = [
+        e.strip().upper()
+        for e in estados
+        if isinstance(e, str) and e.strip()
+    ]
 
     for conta in contas:
         df = carregar_ordens_servico_df(
@@ -27,24 +32,41 @@ def relatorio_fechamento_tecnicos_df(
             tipo_data="data_termino_executado",
         )
 
-        if df.empty:
+        if df is None or df.empty:
             continue
 
-        # Filtro por estado
-        if "dados_endereco_instalacao.estado" in df.columns:
-            df = df[
+        # =========================
+        # GARANTIA DE FECHAMENTO
+        # =========================
+        if "data_termino_executado" in df.columns:
+            df = df[df["data_termino_executado"].notna()]
+
+        # =========================
+        # FILTRO DE ESTADO (SE EXISTIR)
+        # =========================
+        if estados_upper and "dados_endereco_instalacao.estado" in df.columns:
+            df["dados_endereco_instalacao.estado"] = (
                 df["dados_endereco_instalacao.estado"]
                 .astype(str)
                 .str.upper()
+            )
+
+            df = df[
+                df["dados_endereco_instalacao.estado"]
                 .isin(estados_upper)
             ]
 
+        if df.empty:
+            continue
+
+        # =========================
+        # CONTROLE DE ORIGEM
+        # =========================
         df["conta"] = conta.upper()
+
         dfs.append(df)
 
     if not dfs:
         return pd.DataFrame()
 
-    df_final = pd.concat(dfs, ignore_index=True)
-
-    return df_final
+    return pd.concat(dfs, ignore_index=True)

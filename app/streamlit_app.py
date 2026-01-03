@@ -10,7 +10,7 @@ import streamlit as st
 from app.ui.home import render_home
 from app.ui.usuarios_app import render_usuarios
 from app.ui.relatorios_app import render_relatorios
-from app.ui.fechamento_tecnicos_app import render_relatorio_fechamento_tecnico
+from app.ui.fechamento_tecnicos_app import render
 from app.ui.ordens_servico_app import render_ordens_servico
 
 
@@ -48,4 +48,4 @@ elif pagina == "Relatórios":
     render_relatorios()
 
 elif pagina == "Fechamento de Técnicos":
-    render_relatorio_fechamento_tecnico()
+    render()
