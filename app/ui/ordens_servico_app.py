@@ -33,7 +33,8 @@ def carregar_df_por_conta(conta, data_inicio, data_fim):
         conta=conta,
         data_inicio=data_inicio,
         data_fim=data_fim,
-        tipo_data="data_termino_executado",
+        tipo_data = "data_termino_executado"
+        
     )
 
     tempo = round(time.perf_counter() - inicio, 2)

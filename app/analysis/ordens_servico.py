@@ -9,7 +9,7 @@ def carregar_ordens_servico_df(
     data_fim: date,
     tipo_data: str = "data_cadastro",
     itens_por_pagina: int = 100,
-    max_paginas: int = 10,  # 🔴 LIMITE DE SEGURANÇA
+    max_paginas: int = 50,  # 🔴 LIMITE DE SEGURANÇA
 ) -> pd.DataFrame:
     client = get_hubsoft_client(conta)
 
