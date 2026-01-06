@@ -8,16 +8,8 @@ sys.path.append(str(ROOT_DIR))
 import streamlit as st
 
 from app.ui.home import render_home
-<<<<<<< HEAD
-from app.ui.usuarios_app import render_usuarios
-from app.ui.relatorios_app import render_relatorios
-from app.ui.fechamento_tecnicos_app import render
-from app.ui.ordens_servico_app import render_ordens_servico
-from app.ui.relatorio_planilha_app import render
-=======
 from app.ui.relatorios_app import render_relatorios
 from app.ui.usuarios_app import render_usuarios
->>>>>>> dev
 
 
 st.set_page_config(
@@ -32,23 +24,12 @@ pagina = st.sidebar.radio(
     [
         "Home",
         "Usuários",
-<<<<<<< HEAD
-        "Ordem de serviço",
         "Relatórios",
-        "Fechamento de Técnicos",  # 👈 NOVA OPÇÃO
-        "Planilha Autonomos 60",
-=======
-        "Relatórios",
->>>>>>> dev
     ],
 )
 
 # ======================================================
-<<<<<<< HEAD
-# ROTEAMENTO
-=======
 # ROTEAMENTO CORRETO
->>>>>>> dev
 # ======================================================
 if pagina == "Home":
     render_home()
@@ -56,19 +37,5 @@ if pagina == "Home":
 elif pagina == "Usuários":
     render_usuarios()
 
-<<<<<<< HEAD
-elif pagina == "Ordem de serviço":
-    render_ordens_servico()
-
 elif pagina == "Relatórios":
     render_relatorios()
-
-elif pagina == "Fechamento de Técnicos":
-    render()
-
-elif pagina == "Planilha Autonomos 60":
-    render()
-=======
-elif pagina == "Relatórios":
-    render_relatorios()
->>>>>>> dev
