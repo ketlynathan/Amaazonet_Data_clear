@@ -12,6 +12,8 @@ from app.ui.usuarios_app import render_usuarios
 from app.ui.relatorios_app import render_relatorios
 from app.ui.fechamento_tecnicos_app import render
 from app.ui.ordens_servico_app import render_ordens_servico
+from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
+
 
 
 st.set_page_config(
@@ -28,7 +30,8 @@ pagina = st.sidebar.radio(
         "Usuários",
         "Ordem de serviço",
         "Relatórios",
-        "Fechamento de Técnicos",  # 👈 NOVA OPÇÃO
+        "Fechamento de Técnicos", 
+        "Fechamento de Técnicos (Metabase)",  # 👈 NOVO
     ],
 )
 
@@ -49,3 +52,6 @@ elif pagina == "Relatórios":
 
 elif pagina == "Fechamento de Técnicos":
     render()
+
+elif pagina == "Fechamento de Técnicos (Metabase)":
+    render_fechamento_metabase()
