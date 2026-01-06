@@ -1,11 +1,18 @@
 import os
 from dataclasses import dataclass
+<<<<<<< HEAD
 from pathlib import Path
 from dotenv import load_dotenv
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT_DIR / ".env")
+=======
+from dotenv import load_dotenv
+
+
+load_dotenv()
+>>>>>>> dev
 
 
 @dataclass(frozen=True)
@@ -44,6 +51,7 @@ def get_hubsoft_account_config(account: str) -> HubSoftAccountConfig:
         user=_get_env(f"{prefix}USER"),
         password=_get_env(f"{prefix}PASSWORD"),
     )
+<<<<<<< HEAD
 
 # === GOOGLE SHEETS CONFIG =======================================
 
@@ -68,3 +76,5 @@ def get_google_sheets_config() -> GoogleSheetsConfig:
         spreadsheet_id=_get_env("GOOGLE_SHEET_ID"),
         sheet_name=_get_env("GOOGLE_SHEET_NAME"),
     )
+=======
+>>>>>>> dev
