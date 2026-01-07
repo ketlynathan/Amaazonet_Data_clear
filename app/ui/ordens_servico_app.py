@@ -1,5 +1,4 @@
 import streamlit as st
-<<<<<<< HEAD
 import pandas as pd
 import time
 from datetime import date
@@ -274,7 +273,7 @@ def render_ordens_servico():
         file_name="ordens_servico.csv",
         mime="text/csv",
     )
-=======
+
 from app.analysis.ordens_servico import carregar_ordens_servico_df
 
 
@@ -318,4 +317,3 @@ def render_ordens_servico():
 
     st.success(f"{len(df)} ordens encontradas")
     st.dataframe(df, use_container_width=True)
->>>>>>> dev
