@@ -17,6 +17,7 @@ from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
 from app.ui.usuarios_app import render_usuarios
 from app.ui.relatorios_app import render_relatorios
 from app.ui.ordens_servico_app import render_ordens_servico
+from app.ui.relatorio_planilha_app import render_planilha
 
 
 
@@ -34,9 +35,12 @@ pagina = st.sidebar.radio(
     [
         "Home",
         "Usuários",
+        "Ordens de Serviço",
         "Relatórios",
+        "Planilha Google",
         "Fechamento de Técnicos",  # 👈 NOVA OPÇÃO
         "Fechamento de Técnicos Metabase",
+        
 
     ],
 )
@@ -61,4 +65,7 @@ elif pagina == "Fechamento de Técnicos":
 
 elif pagina == "Fechamento de Técnicos Metabase":
     render_fechamento_metabase()
+
+elif pagina == "Planilha Google":
+    render_planilha()
 
