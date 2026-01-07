@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+import pandas as pd
+from app.hubsoft.factory import get_hubsoft_client
 
 # 🔥 Garante que a raiz do projeto esteja no PYTHONPATH
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -13,6 +15,10 @@ from app.ui.fechamento_tecnicos_app import render
 from app.ui.ordens_servico_app import render_ordens_servico
 from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
 from app.ui.usuarios_app import render_usuarios
+from app.ui.relatorios_app import render_relatorios
+from app.ui.ordens_servico_app import render_ordens_servico
+
+
 
 
 
