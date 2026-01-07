@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 import pandas as pd
-from app.hubsoft.factory import get_hubsoft_client
+
 
 # 🔥 Garante que a raiz do projeto esteja no PYTHONPATH
 ROOT_DIR = Path(__file__).resolve().parents[1]
