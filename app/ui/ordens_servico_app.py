@@ -276,94 +276,46 @@ def render_ordens_servico():
 
 from app.analysis.ordens_servico import carregar_ordens_servico_df
 
-# ======================================================
-# CONFIG
-# ======================================================
-COL_NUMERO = "numero"
-COL_STATUS = "status"
-COL_ESTADO = "dados_endereco_instalacao.estado"
-COL_USUARIO = "usuario_fechamento.name"
 
-# ======================================================
-# SESSION STATE (INICIALIZAÇÃO OBRIGATÓRIA)
-# ======================================================
-if "df_os" not in st.session_state:
-    st.session_state.df_os = pd.DataFrame()
-
-if "os_carregadas" not in st.session_state:
-    st.session_state.os_carregadas = False
-
-# ======================================================
-# CACHE POR CONTA
-# ======================================================
 @st.cache_data(ttl=300)
-def carregar_df_por_conta(conta, data_inicio, data_fim):
-    inicio = time.perf_counter()
-
-    df = carregar_ordens_servico_df(
+def carregar_df(conta, data_inicio, data_fim, tipo_data):
+    return carregar_ordens_servico_df(
         conta=conta,
         data_inicio=data_inicio,
         data_fim=data_fim,
-        tipo_data = "data_termino_executado"
-        
+        tipo_data=tipo_data,
     )
 
-    tempo = round(time.perf_counter() - inicio, 2)
-    return df, tempo
 
-# ======================================================
-# FUNÇÕES AUXILIARES
-# ======================================================
-def badge(online):
-    return "🟢 Online" if online else "🔴 Offline"
-
-def busca_excel(df, texto):
-    if not texto:
-        return df
-
-    texto = texto.lower()
-
-    return df[
-        df.astype(str)
-        .apply(lambda col: col.str.lower().str.contains(texto, na=False))
-        .any(axis=1)
-    ]
-
-def contar_status(df, valores):
-    if COL_STATUS not in df.columns:
-        return 0
-
-    return (
-        df[COL_STATUS]
-        .astype(str)
-        .str.upper()
-        .isin(valores)
-        .sum()
-    )
-
-# ======================================================
-# TELA
-# ======================================================
 def render_ordens_servico():
     st.title("🛠️ Ordens de Serviço")
 
-    # =============================
-    # SIDEBAR
-    # =============================
     with st.sidebar:
-        st.subheader("🔎 Filtros de Carga (API)")
+        st.subheader("Filtros")
 
-        contas = st.multiselect(
-            "Contas",
-            ["amazonet", "mania"],
-            default=["amazonet"],
+        conta = st.selectbox("Conta", ["mania", "amazonet"])
+        tipo_data = st.selectbox(
+            "Tipo de data",
+            [
+                "data_cadastro",
+                "data_inicio_programado",
+                "data_inicio_executado",
+                "data_termino_executado",
+            ],
         )
 
-        data_inicio = st.date_input(
-            "Data início",
-            value=date.today().replace(day=1),
+        data_inicio = st.date_input("Data início")
+        data_fim = st.date_input("Data fim")
+
+    with st.spinner("Carregando ordens de serviço..."):
+        df = carregar_df(
+            conta,
+            data_inicio,
+            data_fim,
+            tipo_data,
         )
 
+<<<<<<< HEAD
 
         st.success(f"{len(df)} ordens encontradas")
         st.dataframe(df, use_container_width=True)
@@ -551,3 +503,7 @@ def render_ordens_servico():
         mime="text/csv",
     )
 
+=======
+    st.success(f"{len(df)} ordens encontradas")
+    st.dataframe(df, use_container_width=True)
+>>>>>>> origin/dev
