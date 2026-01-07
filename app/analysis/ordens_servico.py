@@ -7,7 +7,8 @@ def carregar_ordens_servico_df(
     conta: str,
     data_inicio: date,
     data_fim: date,
-    tipo_data: str = "data_cadastro",
+    tipo_data: str,
+    pagina: int = 1,
     itens_por_pagina: int = 100,
     max_paginas: int = 50,  # 🔴 LIMITE DE SEGURANÇA
 ) -> pd.DataFrame:
@@ -44,4 +45,4 @@ def carregar_ordens_servico_df(
     if not todas_ordens:
         return pd.DataFrame()
 
-    return pd.json_normalize(todas_ordens)
+    return pd.json_normalize(ordens)
