@@ -1,13 +1,8 @@
 import streamlit as st
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> feature/relatorio-fechamento-tecnico
 import pandas as pd
 import time
 from datetime import date
 
-<<<<<<< HEAD
 from app.analysis.ordens_servico import carregar_ordens_servico_df
 
 # ======================================================
@@ -278,9 +273,7 @@ def render_ordens_servico():
         file_name="ordens_servico.csv",
         mime="text/csv",
     )
-=======
-=======
->>>>>>> feature/relatorio-fechamento-tecnico
+
 from app.analysis.ordens_servico import carregar_ordens_servico_df
 
 # ======================================================
@@ -371,11 +364,11 @@ def render_ordens_servico():
             value=date.today().replace(day=1),
         )
 
-<<<<<<< HEAD
-    st.success(f"{len(df)} ordens encontradas")
-    st.dataframe(df, use_container_width=True)
->>>>>>> dev
-=======
+
+        st.success(f"{len(df)} ordens encontradas")
+        st.dataframe(df, use_container_width=True)
+
+
         data_fim = st.date_input(
             "Data fim",
             value=date.today(),
@@ -557,4 +550,4 @@ def render_ordens_servico():
         file_name="ordens_servico.csv",
         mime="text/csv",
     )
->>>>>>> feature/relatorio-fechamento-tecnico
+

@@ -1,21 +1,9 @@
 import streamlit as st
 import pandas as pd
-<<<<<<< HEAD
-<<<<<<< HEAD
 import time
-=======
->>>>>>> dev
-=======
-import time
->>>>>>> feature/relatorio-fechamento-tecnico
 
 from app.analysis.usuarios import carregar_usuarios_df
 
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> feature/relatorio-fechamento-tecnico
 # ======================================================
 # CONFIG
 # ======================================================
@@ -25,7 +13,6 @@ COL_NOME = "name"
 # ======================================================
 # CACHE POR CONTA
 # ======================================================
-<<<<<<< HEAD
 @st.cache_data(ttl=600)
 def carregar_df_por_conta(conta: str):
     inicio = time.perf_counter()
@@ -195,9 +182,7 @@ def render_usuarios():
             mime="text/csv",
         )
 
-=======
-=======
->>>>>>> feature/relatorio-fechamento-tecnico
+
 @st.cache_data(ttl=600)
 def carregar_df_por_conta(conta: str):
     inicio = time.perf_counter()
@@ -367,12 +352,10 @@ def render_usuarios():
             mime="text/csv",
         )
 
-<<<<<<< HEAD
+
     st.dataframe(
         df,
         use_container_width=True,
         hide_index=True,
     )
->>>>>>> dev
-=======
->>>>>>> feature/relatorio-fechamento-tecnico
+
