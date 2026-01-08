@@ -1,271 +1,206 @@
 import streamlit as st
 import pandas as pd
-import time
-from datetime import date
+from datetime import date, timedelta
 
 from app.analysis.ordens_servico import carregar_ordens_servico_df
 
 # ======================================================
-# CONFIG
+# CONSTANTES DE COLUNAS (API REAL)
 # ======================================================
-COL_NUMERO = "numero"
 COL_STATUS = "status"
+COL_TECNICO = "usuario_fechamento.name"
 COL_ESTADO = "dados_endereco_instalacao.estado"
-COL_USUARIO = "usuario_fechamento.name"
+
+STATUS_MONITORADOS = [
+    "Finalizado",
+    "Pendente",
+    "Aguardando Agendamento (Reservada)",
+    "Pendente (Reservada)",
+    "Pendente (Reservada) - (Em Execução há 15 minutos)",
+]
 
 # ======================================================
-# SESSION STATE (INICIALIZAÇÃO)
-# ======================================================
-st.session_state.setdefault("df_os", pd.DataFrame())
-st.session_state.setdefault("os_carregadas", False)
-st.session_state.setdefault("status_api", {})
-
-# ======================================================
-# CACHE POR CONTA
-# ======================================================
-@st.cache_data(ttl=300)
-def carregar_df_por_conta(conta, data_inicio, data_fim):
-    inicio = time.perf_counter()
-
-    df = carregar_ordens_servico_df(
-        conta=conta,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-        tipo_data="data_termino_executado",
-    )
-
-    tempo = round(time.perf_counter() - inicio, 2)
-    return df, tempo
-
-# ======================================================
-# FUNÇÕES AUXILIARES
-# ======================================================
-def badge(online: bool) -> str:
-    return "🟢 Online" if online else "🔴 Offline"
-
-
-def busca_excel(df: pd.DataFrame, texto: str) -> pd.DataFrame:
-    if not texto or df.empty:
-        return df
-
-    texto = texto.lower()
-
-    return df[
-        df.astype(str)
-        .apply(lambda col: col.str.lower().str.contains(texto, na=False))
-        .any(axis=1)
-    ]
-
-
-def contar_status(df: pd.DataFrame, valores: list[str]) -> int:
-    if df.empty or COL_STATUS not in df.columns:
-        return 0
-
-    return (
-        df[COL_STATUS]
-        .astype(str)
-        .str.upper()
-        .isin(valores)
-        .sum()
-    )
-
-# ======================================================
-# TELA
+# APP
 # ======================================================
 def render_ordens_servico():
-    st.title("🛠️ Ordens de Serviço")
+    st.title("🛠 Ordens de Serviço – HubSoft")
 
-    # =============================
-    # SIDEBAR – FILTROS DE CARGA
-    # =============================
+    # ======================================================
+    # SESSION STATE (ANTI-QUEBRA)
+    # ======================================================
+    st.session_state.setdefault("df_os", pd.DataFrame())
+    st.session_state.setdefault("carregado", False)
+
+    # ======================================================
+    # SIDEBAR – FILTROS BASE
+    # ======================================================
     with st.sidebar:
-        st.subheader("🔎 Filtros de Carga (API)")
+        st.subheader("🔎 Filtros base")
 
         contas = st.multiselect(
             "Contas",
-            ["amazonet", "mania"],
-            default=["amazonet"],
+            ["mania", "amazonet"],
+            default=["mania", "amazonet"],
         )
+
+        hoje = date.today()
 
         data_inicio = st.date_input(
             "Data início",
-            value=date.today().replace(day=1),
+            hoje - timedelta(days=7),
         )
 
         data_fim = st.date_input(
             "Data fim",
-            value=date.today(),
+            hoje,
         )
 
-        estados = st.multiselect(
-            "Estado",
-            ["AM", "PA"],
-            default=["AM", "PA"],
-        )
+        carregar = st.button("📥 Carregar ordens")
 
-        if st.button("🔄 Recarregar APIs"):
-            st.cache_data.clear()
-            st.session_state.df_os = pd.DataFrame()
-            st.session_state.os_carregadas = False
-            st.session_state.status_api = {}
-            st.success("Cache limpo")
-            st.rerun()
-
-        buscar = st.button("📊 Buscar ordens")
-
-    # =============================
-    # CARGA DAS APIS
-    # =============================
-    if buscar:
+    # ======================================================
+    # CARREGAMENTO
+    # ======================================================
+    if carregar:
         if not contas:
-            st.error("Selecione ao menos uma conta")
+            st.warning("Selecione ao menos uma conta.")
             return
 
-        if data_inicio > data_fim:
-            st.error("Data início maior que data fim")
-            return
+        with st.spinner("🔄 Carregando ordens de serviço..."):
+            dfs = []
 
-        dados = []
-        status_api = {}
-
-        with st.spinner("🔄 Carregando ordens das APIs..."):
             for conta in contas:
-                try:
-                    df, tempo = carregar_df_por_conta(
-                        conta,
-                        data_inicio,
-                        data_fim,
-                    )
+                df_conta = carregar_ordens_servico_df(
+                    conta=conta,
+                    data_inicio=data_inicio,
+                    data_fim=data_fim,
+                )
 
-                    online = not df.empty
-                    status_api[conta] = {
-                        "online": online,
-                        "tempo": tempo,
-                        "qtd": len(df),
-                    }
+                if not df_conta.empty:
+                    dfs.append(df_conta)
 
-                    if online:
-                        df["conta"] = conta.upper()
-                        dados.append(df)
-
-                except Exception as e:
-                    status_api[conta] = {
-                        "online": False,
-                        "tempo": None,
-                        "qtd": 0,
-                    }
-                    st.error(f"Erro na API {conta}")
-                    st.exception(e)
-
-        if not dados:
-            st.error("Nenhuma API retornou dados")
+        if not dfs:
+            st.warning("Nenhuma ordem encontrada.")
+            st.session_state["carregado"] = False
             return
 
-        st.session_state.df_os = pd.concat(dados, ignore_index=True)
-        st.session_state.os_carregadas = True
-        st.session_state.status_api = status_api
+        df = pd.concat(dfs, ignore_index=True)
 
-    # =============================
-    # SEM DADOS
-    # =============================
-    if not st.session_state.os_carregadas:
-        st.info("Selecione os filtros e clique em **📊 Buscar ordens**")
+        # garante colunas críticas
+        for col in [COL_STATUS, COL_TECNICO, COL_ESTADO]:
+            if col not in df.columns:
+                df[col] = None
+
+        st.session_state["df_os"] = df
+        st.session_state["carregado"] = True
+
+    # ======================================================
+    # AGUARDA CARGA
+    # ======================================================
+    if not st.session_state["carregado"]:
+        st.info("Selecione os filtros e clique em **📥 Carregar ordens**")
         return
 
-    # =============================
-    # DF BASE
-    # =============================
-    df = st.session_state.df_os.copy()
+    df_base = st.session_state["df_os"]
 
-    # =============================
-    # STATUS DAS APIS
-    # =============================
-    st.subheader("🔌 Status das APIs")
+    # ======================================================
+    # KPIs / CARDS
+    # ======================================================
+    st.subheader("📊 Resumo")
 
-    cols = st.columns(len(st.session_state.status_api))
-    for col, (conta, info) in zip(cols, st.session_state.status_api.items()):
-        with col:
-            st.markdown(f"**{conta.upper()}**")
-            st.markdown(badge(info["online"]))
-            st.caption(f"⏱️ {info['tempo']}s")
-            st.caption(f"📦 {info['qtd']}")
+    total_os = len(df_base)
 
-    # =============================
-    # FILTROS LOCAIS
-    # =============================
-    st.subheader("🎯 Filtros locais (Excel style)")
+    cols = st.columns(len(STATUS_MONITORADOS) + 1)
 
-    if COL_ESTADO in df.columns:
-        df = df[
-            df[COL_ESTADO]
-            .astype(str)
-            .str.upper()
-            .isin(estados)
-        ]
+    cols[0].metric("Total OS", total_os)
 
-    busca = st.text_input(
-        "🔍 Buscar em toda a tabela",
-        placeholder="Número da OS, cliente, técnico...",
-    )
-    df = busca_excel(df, busca)
+    for i, status in enumerate(STATUS_MONITORADOS, start=1):
+        total_status = len(df_base[df_base[COL_STATUS] == status])
+        cols[i].metric(status, total_status)
 
-    if COL_USUARIO in df.columns:
-        usuarios = (
-            df[COL_USUARIO]
+    # ======================================================
+    # FILTROS PÓS-CARGA
+    # ======================================================
+    st.subheader("🎯 Filtros")
+
+    col1, col2 = st.columns(2)
+
+    # -------- TÉCNICO --------
+    with col1:
+        busca_tecnico = st.text_input(
+            "🔍 Buscar técnico",
+            placeholder="Digite parte do nome",
+        )
+
+        tecnicos = (
+            df_base[COL_TECNICO]
             .dropna()
             .astype(str)
-            .sort_values()
             .unique()
             .tolist()
         )
+        tecnicos.sort()
 
-        busca_usuario = st.text_input(
-            "👤 Buscar usuário de fechamento",
-            placeholder="Ex: Edinelson, MAO, STM...",
-        )
-
-        if busca_usuario:
-            usuarios = [
-                u for u in usuarios
-                if busca_usuario.lower() in u.lower()
+        if busca_tecnico:
+            tecnicos = [
+                t for t in tecnicos
+                if busca_tecnico.lower() in t.lower()
             ]
 
-        usuarios_sel = st.multiselect(
-            "Selecionar usuários",
-            usuarios,
+        filtro_tecnico = st.multiselect(
+            "👷 Técnico",
+            tecnicos,
+            default=tecnicos,
         )
 
-        if usuarios_sel:
-            df = df[df[COL_USUARIO].isin(usuarios_sel)]
+    # -------- ESTADO --------
+    with col2:
+        estados = (
+            df_base[COL_ESTADO]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+        estados.sort()
 
-    # =============================
-    # MÉTRICAS
-    # =============================
-    st.subheader("📊 Indicadores")
+        filtro_estado = st.multiselect(
+            "📍 Estado",
+            estados,
+            default=estados,
+        )
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("📦 Total", len(df))
-    c2.metric("✅ Fechadas", contar_status(df, ["FECHADA", "CONCLUIDA"]))
-    c3.metric("⏳ Pendentes", contar_status(df, ["ABERTA", "PENDENTE"]))
-    c4.metric("❌ Canceladas", contar_status(df, ["CANCELADA"]))
+    # ======================================================
+    # APLICA FILTROS
+    # ======================================================
+    df = df_base.copy()
 
-    # =============================
-    # TABELA
-    # =============================
-    st.subheader("📋 Ordens de Serviço")
+    if filtro_tecnico:
+        df = df[df[COL_TECNICO].isin(filtro_tecnico)]
 
+    if filtro_estado:
+        df = df[df[COL_ESTADO].isin(filtro_estado)]
+
+    if df.empty:
+        st.warning("Nenhuma ordem encontrada com os filtros aplicados.")
+        return
+
+    st.success(f"✅ {len(df)} ordens encontradas")
+
+    # ======================================================
+    # TABELA COMPLETA (TUDO DA API)
+    # ======================================================
     st.dataframe(
-        df.sort_values(COL_NUMERO, ascending=False),
-        use_container_width=True,
+        df,
+        width="stretch",
         hide_index=True,
     )
 
-    # =============================
+    # ======================================================
     # EXPORTAÇÃO
-    # =============================
+    # ======================================================
     st.download_button(
         "⬇️ Exportar CSV",
         df.to_csv(index=False),
-        file_name="ordens_servico.csv",
+        file_name="ordens_servico_hubsoft.csv",
         mime="text/csv",
     )

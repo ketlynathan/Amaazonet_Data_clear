@@ -12,11 +12,9 @@ COL_TECNICO = "usuario_fechamento"
 COL_TIPO_OS = "tipo_ordem_servico"
 COL_DATA_FIM = "data_termino_executado"
 
-
 # ======================================================
 # TIPOS DE OS PERMITIDOS POR CONTA
 # ======================================================
-
 TIPOS_OS_FECHAMENTO_POR_CONTA = {
     "amazonet": [
         "AMZ QUALIDADE - NÃO CONFORMIDADES",
@@ -39,12 +37,9 @@ TIPOS_OS_FECHAMENTO_POR_CONTA = {
 # CACHE
 # ======================================================
 @st.cache_data(ttl=900, show_spinner=False)
-
-
 def carregar_base(contas, data_inicio, data_fim) -> pd.DataFrame:
     if not contas:
         return pd.DataFrame()
-
 
     dfs = []
 
@@ -97,10 +92,7 @@ def render_fechamento_metabase():
         gerar = st.button("📊 Gerar relatório")
 
     # =========================
-
-
     # CARREGAMENTO
-
     # =========================
     if gerar:
         with st.spinner("🔄 Carregando dados do Metabase..."):
@@ -108,15 +100,6 @@ def render_fechamento_metabase():
 
         if df_base.empty:
             st.warning("Nenhum dado retornado pelo Metabase.")
-
-            return
-
-        # 🔒 FILTRA TIPOS PERMITIDOS POR CONTA
-        tipos_permitidos = set()
-        for conta in contas:
-            tipos_permitidos.update(
-                TIPOS_OS_FECHAMENTO_POR_CONTA[conta]
-
             st.session_state["carregado"] = False
             return
 
@@ -127,17 +110,11 @@ def render_fechamento_metabase():
         for conta in contas:
             tipos_permitidos.update(
                 TIPOS_OS_FECHAMENTO_POR_CONTA.get(conta, [])
-
             )
 
         df_base = df_base[
             df_base[COL_TIPO_OS].isin(tipos_permitidos)
         ]
-
-
-        st.session_state["df_base"] = df_base
-        st.session_state["carregado"] = True
-
 
         if df_base.empty:
             st.warning(
@@ -153,7 +130,7 @@ def render_fechamento_metabase():
 
         if not colunas_necessarias.issubset(df_base.columns):
             st.error(
-                "Os dados retornados não possuem todas as colunas necessárias para os filtros."
+                "Os dados retornados não possuem todas as colunas necessárias."
             )
             st.write("Colunas disponíveis:", list(df_base.columns))
             st.session_state["carregado"] = False
@@ -163,9 +140,8 @@ def render_fechamento_metabase():
         st.session_state["carregado"] = True
 
     # =========================
-    # AGUARDA AÇÃO DO USUÁRIO
+    # AGUARDA AÇÃO
     # =========================
-
     if not st.session_state["carregado"]:
         st.info("Selecione os filtros e clique em **📊 Gerar relatório**")
         return
@@ -233,7 +209,6 @@ def render_fechamento_metabase():
     if filtro_tipo_os:
         df = df[df[COL_TIPO_OS].isin(filtro_tipo_os)]
 
-
     if df.empty:
         st.warning("Nenhuma ordem encontrada com os filtros selecionados.")
         return
@@ -244,16 +219,16 @@ def render_fechamento_metabase():
     # TABELA
     # =========================
     colunas_exibir = [
-        "numero_ordem_servico",
-        "tipo_ordem_servico",
-        "usuario_fechamento",
+        COL_NUMERO,
+        COL_TIPO_OS,
+        COL_TECNICO,
         "nome_cliente",
         "codigo_cliente",
         "bairro",
         "cidade",
         "motivo_fechamento",
         "data_cadastro_os",
-        "data_termino_executado",
+        COL_DATA_FIM,
         "conta",
     ]
 
@@ -280,4 +255,4 @@ def render_fechamento_metabase():
         df_exibir.to_csv(index=False),
         file_name="fechamento_tecnico_metabase.csv",
         mime="text/csv",
-    ))
+    )

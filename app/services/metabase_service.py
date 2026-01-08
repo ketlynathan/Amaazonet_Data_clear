@@ -3,6 +3,7 @@ import json
 import urllib.parse
 from datetime import date
 from typing import Dict, Tuple
+
 import requests
 import pandas as pd
 from dotenv import load_dotenv
@@ -12,30 +13,6 @@ from dotenv import load_dotenv
 # ======================================================
 load_dotenv()
 
-MANIA_BASE_URL = os.getenv("MANIA_BASE_URL")
-AMAZONET_BASE_URL = os.getenv("AMAZONET_BASE_URL")
-
-MANIA_CARD_ID = os.getenv("MANIA_CARD_ID")
-AMAZONET_CARD_ID = os.getenv("AMAZONET_CARD_ID")
-
-
-
-# ======================================================
-# URL BUILDER
-# ======================================================
-def _montar_url(base_url: str, card_id: str, data_inicio: date, data_fim: date) -> str:
-    parameters = [
-        {
-            "type": "date/single",
-            "value": data_inicio.isoformat(),
-            "target": ["variable", ["template-tag", "datainicio"]],
-        },
-        {
-            "type": "date/single",
-            "value": data_fim.isoformat(),
-            "target": ["variable", ["template-tag", "datafim"]],
-        },
-    ]
 # ======================================================
 # CONFIGURAÇÃO POR CONTA
 # ======================================================
@@ -51,7 +28,7 @@ CONTAS_CONFIG: Dict[str, Tuple[str | None, str | None]] = {
 }
 
 # ======================================================
-# UTIL
+# UTIL — MONTA URL METABASE
 # ======================================================
 def _montar_url(
     base_url: str,
@@ -59,7 +36,6 @@ def _montar_url(
     data_inicio: date,
     data_fim: date,
 ) -> str:
-
     parameters = [
         {
             "type": "date/single",
@@ -73,14 +49,12 @@ def _montar_url(
         },
     ]
 
-
     params = urllib.parse.quote(json.dumps(parameters))
 
     return (
         f"{base_url}/api/public/card/{card_id}/query/json"
         f"?parameters={params}"
     )
-
 
 # ======================================================
 # NORMALIZAÇÃO (ANTI-QUEBRA)
@@ -96,54 +70,36 @@ def _normalizar_df(df: pd.DataFrame, conta: str) -> pd.DataFrame:
         "tipo_ordem_servico.descricao": "tipo_ordem_servico",
     }
 
-    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+    df = df.rename(
+        columns={k: v for k, v in rename_map.items() if k in df.columns}
+    )
 
-    # Datas
+    # Datas (defensivo)
     for col in ["data_termino_executado", "data_cadastro_os"]:
         if col in df.columns:
-            df[col] = pd.to_datetime(df[col], dayfirst=True, errors="coerce")
+            df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
 
     df["conta"] = conta.upper()
 
     return df
 
-
 # ======================================================
-# LOAD PRINCIPAL
-
-    params_str = urllib.parse.quote(json.dumps(parameters))
-
-    return (
-        f"{base_url}/api/public/card/{card_id}/query/json"
-        f"?parameters={params_str}"
-    )
-
-# ======================================================
-# SERVICE
-
+# SERVICE — FECHAMENTO METABASE
 # ======================================================
 def carregar_fechamento_metabase(
     conta: str,
     data_inicio: date,
     data_fim: date,
 ) -> pd.DataFrame:
+    """
+    Carrega fechamento técnico via Metabase (public card)
+    """
 
-
-    if conta == "mania":
-        base_url = MANIA_BASE_URL
-        card_id = MANIA_CARD_ID
-
-    elif conta == "amazonet":
-        base_url = AMAZONET_BASE_URL
-        card_id = AMAZONET_CARD_ID
-
-    else:
-        return pd.DataFrame()
-
+    conta = conta.lower().strip()
 
     config = CONTAS_CONFIG.get(conta)
     if not config:
-        return pd.DataFrame()
+        raise ValueError(f"Conta inválida: {conta}")
 
     base_url, card_id = config
 
@@ -151,7 +107,6 @@ def carregar_fechamento_metabase(
         raise RuntimeError(
             f"Configuração ausente no .env para conta: {conta}"
         )
-
 
     url = _montar_url(base_url, card_id, data_inicio, data_fim)
 
@@ -166,16 +121,7 @@ def carregar_fechamento_metabase(
 
         df = pd.DataFrame(data)
 
-        df = _normalizar_df(df, conta)
-
-        return df
-
-    except Exception as e:
-        print(f"[ERRO METABASE - {conta.upper()}]")
-        print(url)
-        print(e)
-        df["conta"] = conta.upper()
-        return df
+        return _normalizar_df(df, conta)
 
     except requests.RequestException as e:
         print("======================================")
@@ -183,5 +129,12 @@ def carregar_fechamento_metabase(
         print("URL:", url)
         print("ERRO:", e)
         print("======================================")
+        return pd.DataFrame()
 
+    except Exception as e:
+        print("======================================")
+        print(f"[ERRO INESPERADO METABASE - {conta.upper()}]")
+        print("URL:", url)
+        print("ERRO:", e)
+        print("======================================")
         return pd.DataFrame()
