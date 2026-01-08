@@ -1,40 +1,50 @@
-
 import logging
 import pandas as pd
 from app.hubsoft.factory import get_hubsoft_client
 
 
+# ======================================================
+# SERVICE
+# ======================================================
 def carregar_usuarios_df(conta: str) -> pd.DataFrame:
     client = get_hubsoft_client(conta)
-
     data = client.get("configuracao/geral/usuario")
 
-    # defensivo
-    if not isinstance(data, dict):
+    usuarios = _extrair_lista_usuarios(data)
+    if not usuarios:
         return pd.DataFrame()
 
-    usuarios = (
+    df = pd.json_normalize(usuarios)
+
+    _padronizar_colunas(df)
+    df["conta"] = conta.upper()
+
+    return df
+
+
+# ======================================================
+# UTIL
+# ======================================================
+def _extrair_lista_usuarios(data) -> list:
+    if not isinstance(data, dict):
+        return []
+
+    return (
         data.get("usuarios")
         or data.get("data")
         or data.get("items")
         or []
     )
 
-    if not isinstance(usuarios, list):
-        return pd.DataFrame()
 
-    df = pd.json_normalize(usuarios)
-
-    # padroniza colunas importantes
+def _padronizar_colunas(df: pd.DataFrame) -> None:
     if "name" not in df.columns:
         df["name"] = None
 
-    df["conta"] = conta.upper()
 
-    return df
-
-
-
+# ======================================================
+# DEBUG LOCAL
+# ======================================================
 def _debug():
     df = carregar_usuarios_df("mania")
 
@@ -50,6 +60,4 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
-
     _debug()
-

@@ -1,6 +1,9 @@
 import os
 import json
 import urllib.parse
+from datetime import date
+from typing import Dict, Tuple
+
 import requests
 import pandas as pd
 from dotenv import load_dotenv
@@ -10,17 +13,29 @@ from dotenv import load_dotenv
 # ======================================================
 load_dotenv()
 
-MANIA_BASE_URL = os.getenv("MANIA_BASE_URL")
-AMAZONET_BASE_URL = os.getenv("AMAZONET_BASE_URL")
-
-MANIA_CARD_ID = os.getenv("MANIA_CARD_ID")
-AMAZONET_CARD_ID = os.getenv("AMAZONET_CARD_ID")
-
+# ======================================================
+# CONFIGURAÇÃO POR CONTA
+# ======================================================
+CONTAS_CONFIG: Dict[str, Tuple[str | None, str | None]] = {
+    "mania": (
+        os.getenv("MANIA_BASE_URL"),
+        os.getenv("MANIA_CARD_ID"),
+    ),
+    "amazonet": (
+        os.getenv("AMAZONET_BASE_URL"),
+        os.getenv("AMAZONET_CARD_ID"),
+    ),
+}
 
 # ======================================================
 # UTIL
 # ======================================================
-def _montar_url(base_url: str, card_id: str, data_inicio, data_fim) -> str:
+def _montar_url(
+    base_url: str,
+    card_id: str,
+    data_inicio: date,
+    data_fim: date,
+) -> str:
     parameters = [
         {
             "type": "date/single",
@@ -41,26 +56,19 @@ def _montar_url(base_url: str, card_id: str, data_inicio, data_fim) -> str:
         f"?parameters={params_str}"
     )
 
-
 # ======================================================
 # SERVICE
 # ======================================================
 def carregar_fechamento_metabase(
     conta: str,
-    data_inicio,
-    data_fim,
+    data_inicio: date,
+    data_fim: date,
 ) -> pd.DataFrame:
-
-    if conta == "mania":
-        base_url = MANIA_BASE_URL
-        card_id = MANIA_CARD_ID
-
-    elif conta == "amazonet":
-        base_url = AMAZONET_BASE_URL
-        card_id = AMAZONET_CARD_ID
-
-    else:
+    config = CONTAS_CONFIG.get(conta)
+    if not config:
         return pd.DataFrame()
+
+    base_url, card_id = config
 
     if not base_url or not card_id:
         raise RuntimeError(
@@ -74,16 +82,14 @@ def carregar_fechamento_metabase(
         response.raise_for_status()
 
         data = response.json()
-
         if not data:
             return pd.DataFrame()
 
         df = pd.DataFrame(data)
         df["conta"] = conta.upper()
-
         return df
 
-    except Exception as e:
+    except requests.RequestException as e:
         print("======================================")
         print(f"[ERRO METABASE - {conta.upper()}]")
         print("URL:", url)
