@@ -84,6 +84,8 @@ def render_fechamento_metabase():
         )
 
         gerar = st.button("📊 Gerar relatório")
+        if "df_fechamento_filtrado" not in st.session_state:
+            st.session_state["df_fechamento_filtrado"] = pd.DataFrame()
 
     # =========================
     # CARREGAMENTO (SÓ NO BOTÃO)
@@ -210,6 +212,15 @@ def render_fechamento_metabase():
         use_container_width=True,
         hide_index=True,
     )
+
+    # =====================================
+    # DF FINAL (APÓS TODOS OS FILTROS)
+    # =====================================
+    df_final = df.copy()
+
+    # 🔗 DISPONIBILIZA PARA O FINANCEIRO
+    st.session_state["df_fechamento_filtrado"] = df_final
+
 
     # =========================
     # EXPORTAÇÃO

@@ -18,6 +18,9 @@ from app.ui.usuarios_app import render_usuarios
 from app.ui.relatorios_app import render_relatorios
 from app.ui.ordens_servico_app import render_ordens_servico
 from app.ui.relatorio_planilha_app import render_planilha
+from app.ui.relatorio_financeiro_instalacoes_app import (
+    render_relatorio_financeiro_instalacoes,
+)
 
 
 
@@ -40,6 +43,7 @@ pagina = st.sidebar.radio(
         "Planilha Google",
         "Fechamento de Técnicos",  # 👈 NOVA OPÇÃO
         "Fechamento de Técnicos Metabase",
+        "Relatório Financeiro Instalações",  # 👈 NOVA OPÇÃO
         
 
     ],
@@ -68,3 +72,6 @@ elif pagina == "Fechamento de Técnicos Metabase":
 
 elif pagina == "Planilha Google":
     render_planilha()
+
+elif pagina == "Relatório Financeiro Instalações":
+    render_relatorio_financeiro_instalacoes()
