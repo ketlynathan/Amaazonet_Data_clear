@@ -14,13 +14,11 @@ COL_ESTADO = "dados_endereco_instalacao.estado"
 COL_USUARIO = "usuario_fechamento.name"
 
 # ======================================================
-# SESSION STATE (INICIALIZAÇÃO OBRIGATÓRIA)
+# SESSION STATE (INICIALIZAÇÃO)
 # ======================================================
-if "df_os" not in st.session_state:
-    st.session_state.df_os = pd.DataFrame()
-
-if "os_carregadas" not in st.session_state:
-    st.session_state.os_carregadas = False
+st.session_state.setdefault("df_os", pd.DataFrame())
+st.session_state.setdefault("os_carregadas", False)
+st.session_state.setdefault("status_api", {})
 
 # ======================================================
 # CACHE POR CONTA
@@ -33,8 +31,7 @@ def carregar_df_por_conta(conta, data_inicio, data_fim):
         conta=conta,
         data_inicio=data_inicio,
         data_fim=data_fim,
-        tipo_data = "data_termino_executado"
-        
+        tipo_data="data_termino_executado",
     )
 
     tempo = round(time.perf_counter() - inicio, 2)
@@ -43,11 +40,12 @@ def carregar_df_por_conta(conta, data_inicio, data_fim):
 # ======================================================
 # FUNÇÕES AUXILIARES
 # ======================================================
-def badge(online):
+def badge(online: bool) -> str:
     return "🟢 Online" if online else "🔴 Offline"
 
-def busca_excel(df, texto):
-    if not texto:
+
+def busca_excel(df: pd.DataFrame, texto: str) -> pd.DataFrame:
+    if not texto or df.empty:
         return df
 
     texto = texto.lower()
@@ -58,8 +56,9 @@ def busca_excel(df, texto):
         .any(axis=1)
     ]
 
-def contar_status(df, valores):
-    if COL_STATUS not in df.columns:
+
+def contar_status(df: pd.DataFrame, valores: list[str]) -> int:
+    if df.empty or COL_STATUS not in df.columns:
         return 0
 
     return (
@@ -77,7 +76,7 @@ def render_ordens_servico():
     st.title("🛠️ Ordens de Serviço")
 
     # =============================
-    # SIDEBAR
+    # SIDEBAR – FILTROS DE CARGA
     # =============================
     with st.sidebar:
         st.subheader("🔎 Filtros de Carga (API)")
@@ -108,13 +107,14 @@ def render_ordens_servico():
             st.cache_data.clear()
             st.session_state.df_os = pd.DataFrame()
             st.session_state.os_carregadas = False
+            st.session_state.status_api = {}
             st.success("Cache limpo")
             st.rerun()
 
         buscar = st.button("📊 Buscar ordens")
 
     # =============================
-    # VALIDAÇÕES
+    # CARGA DAS APIS
     # =============================
     if buscar:
         if not contas:
@@ -166,14 +166,14 @@ def render_ordens_servico():
         st.session_state.status_api = status_api
 
     # =============================
-    # SE AINDA NÃO CARREGOU
+    # SEM DADOS
     # =============================
     if not st.session_state.os_carregadas:
         st.info("Selecione os filtros e clique em **📊 Buscar ordens**")
         return
 
     # =============================
-    # DF BASE (NUNCA ALTERAR)
+    # DF BASE
     # =============================
     df = st.session_state.df_os.copy()
 
@@ -191,11 +191,10 @@ def render_ordens_servico():
             st.caption(f"📦 {info['qtd']}")
 
     # =============================
-    # FILTROS LOCAIS (SEM API)
+    # FILTROS LOCAIS
     # =============================
     st.subheader("🎯 Filtros locais (Excel style)")
 
-    # Estado
     if COL_ESTADO in df.columns:
         df = df[
             df[COL_ESTADO]
@@ -204,14 +203,12 @@ def render_ordens_servico():
             .isin(estados)
         ]
 
-    # Busca global
     busca = st.text_input(
         "🔍 Buscar em toda a tabela",
         placeholder="Número da OS, cliente, técnico...",
     )
     df = busca_excel(df, busca)
 
-    # Usuário fechamento
     if COL_USUARIO in df.columns:
         usuarios = (
             df[COL_USUARIO]
@@ -228,20 +225,18 @@ def render_ordens_servico():
         )
 
         if busca_usuario:
-            usuarios_filtrados = [
+            usuarios = [
                 u for u in usuarios
                 if busca_usuario.lower() in u.lower()
             ]
-        else:
-            usuarios_filtrados = usuarios
 
-        usuarios_selecionados = st.multiselect(
+        usuarios_sel = st.multiselect(
             "Selecionar usuários",
-            usuarios_filtrados,
+            usuarios,
         )
 
-        if usuarios_selecionados:
-            df = df[df[COL_USUARIO].isin(usuarios_selecionados)]
+        if usuarios_sel:
+            df = df[df[COL_USUARIO].isin(usuarios_sel)]
 
     # =============================
     # MÉTRICAS
