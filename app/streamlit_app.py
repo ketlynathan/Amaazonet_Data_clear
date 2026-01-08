@@ -68,4 +68,3 @@ elif pagina == "Fechamento de Técnicos Metabase":
 
 elif pagina == "Planilha Google":
     render_planilha()
-

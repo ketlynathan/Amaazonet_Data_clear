@@ -91,8 +91,6 @@ def carregar_fechamento_metabase(
         print("======================================")
         return pd.DataFrame()
 
-fechamento_tecnicos_metabase_app.py
-
 import streamlit as st
 import pandas as pd
 from datetime import date, timedelta

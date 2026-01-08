@@ -5,7 +5,7 @@ import pandas as pd
 from app.infra.google_sheets import read_sheet_as_dataframe
 
 
-def render():
+def render_planilha():
     st.title("📊 Relatório – Planilha Google")
 
     with st.spinner("Carregando dados da planilha..."):

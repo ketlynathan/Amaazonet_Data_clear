@@ -1,14 +1,9 @@
 import streamlit as st
 import pandas as pd
-<<<<<<< HEAD
 import time
-=======
->>>>>>> dev
 
 from app.analysis.usuarios import carregar_usuarios_df
 
-
-<<<<<<< HEAD
 # ======================================================
 # CONFIG
 # ======================================================
@@ -187,7 +182,7 @@ def render_usuarios():
             mime="text/csv",
         )
 
-=======
+
 @st.cache_data(ttl=600)
 def carregar_df(conta: str) -> pd.DataFrame:
     return carregar_usuarios_df(conta)
@@ -222,4 +217,3 @@ def render_usuarios():
         use_container_width=True,
         hide_index=True,
     )
->>>>>>> dev
