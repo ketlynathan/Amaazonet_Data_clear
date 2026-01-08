@@ -1,9 +1,6 @@
 import os
 import json
 import urllib.parse
-from datetime import date
-from typing import Dict, Tuple
-
 import requests
 import pandas as pd
 from dotenv import load_dotenv
@@ -13,29 +10,17 @@ from dotenv import load_dotenv
 # ======================================================
 load_dotenv()
 
-# ======================================================
-# CONFIGURAÇÃO POR CONTA
-# ======================================================
-CONTAS_CONFIG: Dict[str, Tuple[str | None, str | None]] = {
-    "mania": (
-        os.getenv("MANIA_BASE_URL"),
-        os.getenv("MANIA_CARD_ID"),
-    ),
-    "amazonet": (
-        os.getenv("AMAZONET_BASE_URL"),
-        os.getenv("AMAZONET_CARD_ID"),
-    ),
-}
+MANIA_BASE_URL = os.getenv("MANIA_BASE_URL")
+AMAZONET_BASE_URL = os.getenv("AMAZONET_BASE_URL")
+
+MANIA_CARD_ID = os.getenv("MANIA_CARD_ID")
+AMAZONET_CARD_ID = os.getenv("AMAZONET_CARD_ID")
+
 
 # ======================================================
-# UTIL — MONTA URL METABASE
+# UTIL
 # ======================================================
-def _montar_url(
-    base_url: str,
-    card_id: str,
-    data_inicio: date,
-    data_fim: date,
-) -> str:
+def _montar_url(base_url: str, card_id: str, data_inicio, data_fim) -> str:
     parameters = [
         {
             "type": "date/single",
@@ -49,59 +34,33 @@ def _montar_url(
         },
     ]
 
-    params = urllib.parse.quote(json.dumps(parameters))
+    params_str = urllib.parse.quote(json.dumps(parameters))
 
     return (
         f"{base_url}/api/public/card/{card_id}/query/json"
-        f"?parameters={params}"
+        f"?parameters={params_str}"
     )
 
-# ======================================================
-# NORMALIZAÇÃO (ANTI-QUEBRA)
-# ======================================================
-def _normalizar_df(df: pd.DataFrame, conta: str) -> pd.DataFrame:
-    if df.empty:
-        return df
-
-    rename_map = {
-        "numero": "numero_ordem_servico",
-        "tecnico": "usuario_fechamento",
-        "usuario_fechamento.name": "usuario_fechamento",
-        "tipo_ordem_servico.descricao": "tipo_ordem_servico",
-    }
-
-    df = df.rename(
-        columns={k: v for k, v in rename_map.items() if k in df.columns}
-    )
-
-    # Datas (defensivo)
-    for col in ["data_termino_executado", "data_cadastro_os"]:
-        if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
-
-    df["conta"] = conta.upper()
-
-    return df
 
 # ======================================================
-# SERVICE — FECHAMENTO METABASE
+# SERVICE
 # ======================================================
 def carregar_fechamento_metabase(
     conta: str,
-    data_inicio: date,
-    data_fim: date,
+    data_inicio,
+    data_fim,
 ) -> pd.DataFrame:
-    """
-    Carrega fechamento técnico via Metabase (public card)
-    """
 
-    conta = conta.lower().strip()
+    if conta == "mania":
+        base_url = MANIA_BASE_URL
+        card_id = MANIA_CARD_ID
 
-    config = CONTAS_CONFIG.get(conta)
-    if not config:
-        raise ValueError(f"Conta inválida: {conta}")
+    elif conta == "amazonet":
+        base_url = AMAZONET_BASE_URL
+        card_id = AMAZONET_CARD_ID
 
-    base_url, card_id = config
+    else:
+        return pd.DataFrame()
 
     if not base_url or not card_id:
         raise RuntimeError(
@@ -120,20 +79,13 @@ def carregar_fechamento_metabase(
             return pd.DataFrame()
 
         df = pd.DataFrame(data)
+        df["conta"] = conta.upper()
 
-        return _normalizar_df(df, conta)
-
-    except requests.RequestException as e:
-        print("======================================")
-        print(f"[ERRO METABASE - {conta.upper()}]")
-        print("URL:", url)
-        print("ERRO:", e)
-        print("======================================")
-        return pd.DataFrame()
+        return df
 
     except Exception as e:
         print("======================================")
-        print(f"[ERRO INESPERADO METABASE - {conta.upper()}]")
+        print(f"[ERRO METABASE - {conta.upper()}]")
         print("URL:", url)
         print("ERRO:", e)
         print("======================================")
