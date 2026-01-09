@@ -1,148 +1,127 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
-
+from datetime import timedelta
 from app.services.financeiro_rules import aplicar_regras_financeiras
 
 
-# ======================================================
-# UTIL
-# ======================================================
-def formatar_moeda(valor: float) -> str:
-    return (
-        f"R$ {valor:,.2f}"
-        .replace(",", "X")
-        .replace(".", ",")
-        .replace("X", ".")
-    )
-
-
-# ======================================================
-# UI
-# ======================================================
 def render_relatorio_financeiro_instalacoes():
-    st.title("🧾 Resumo de Instalações – Financeiro")
+    st.markdown("## 🧾 Resumo de Instalações – Financeiro")
 
-    # =========================
-    # VALIDA DF ORIGEM
-    # =========================
-    if "df_fechamento_filtrado" not in st.session_state:
-        st.warning(
-            "⚠️ Gere primeiro o **Fechamento Técnicos (Metabase)**."
-        )
+    # ===============================
+    # 1) Dados do técnico (session)
+    # ===============================
+    df_base = st.session_state.get("df_fechamento_filtrado")
+
+    if df_base is None or df_base.empty:
+        st.warning("Relatório técnico ainda não foi carregado.")
         return
 
-    df_origem = st.session_state["df_fechamento_filtrado"].copy()
+    # ===============================
+    # 2) Aplica regras financeiras
+    # ===============================
+    df = aplicar_regras_financeiras(df_base)
 
-    if df_origem.empty:
-        st.warning("Nenhum dado disponível.")
+    # ===============================
+    # 3) Filtro por técnico
+    # ===============================
+    tecnicos = sorted(df["usuario_fechamento"].dropna().unique())
+    tecnico = st.selectbox("👷 Técnico", tecnicos)
+
+    df = df[df["usuario_fechamento"] == tecnico]
+
+    if df.empty:
+        st.warning("Nenhum registro encontrado.")
         return
 
-    # =========================
-    # NORMALIZAÇÃO
-    # =========================
-    df = pd.DataFrame({
-        "empresa": df_origem["conta"],
-        "codigo_cliente": df_origem["codigo_cliente"],
-        "codigo_os": df_origem["numero_ordem_servico"],
-        "tecnico": df_origem["usuario_fechamento"],
-        "status_os": df_origem.get("status_os", "APROVADO"),
-    })
+    # ===============================
+    # 4) Datas
+    # ===============================
+    data_fim = pd.to_datetime(df["data_termino_executado"], dayfirst=True, errors="coerce").max()
+    data_inicio = data_fim - timedelta(days=5)
+    
 
-    # =========================
-    # DUPLICIDADE DE CLIENTE
-    # =========================
-    df["cliente_duplicado"] = (
-        df["codigo_cliente"]
-        .duplicated(keep=False)
-        .astype(int)
-    )
+    if pd.notnull(data_fim):
+        data_pagamento = data_fim + timedelta(days=1)
+    else:
+        data_pagamento = None
 
-    # =========================
-    # REGRAS FINANCEIRAS
-    # =========================
-    df = aplicar_regras_financeiras(df)
+    # ===============================
+    # 5) Detecta duplicados
+    # ===============================
+    df["duplicado"] = df.duplicated(subset=["codigo_cliente"], keep=False)
 
-    # =========================
-    # CONTROLE MANUAL DE REMOÇÃO
-    # =========================
-    df["remover"] = False
+    duplicados = df[df["duplicado"]]
 
-    st.subheader("📋 Registros")
+    if not duplicados.empty:
+        st.warning("⚠️ Existem clientes duplicados. Selecione quais deseja remover.")
 
-    df_editado = st.data_editor(
-        df,
-        column_config={
-            "remover": st.column_config.CheckboxColumn(
-                "Remover"
-            ),
-            "valor_a_pagar": st.column_config.NumberColumn(
-                "Valor a pagar (R$)",
-                format="R$ %.2f",
-            ),
-        },
-        use_container_width=True,
-        hide_index=True,
-    )
+        opcoes = duplicados.apply(
+            lambda r: f"{r['codigo_cliente']} | OS {r['numero_ordem_servico']}",
+            axis=1
+        ).tolist()
 
-    df_final = df_editado[~df_editado["remover"]].copy()
+        remover = st.multiselect("🗑️ Remover registros:", opcoes)
 
-    # =========================
-    # RESUMO
-    # =========================
-    total_receber = df_final["valor_a_pagar"].sum()
+        if remover:
+            remover_os = [x.split("OS")[1].strip() for x in remover]
+            df = df[~df["numero_ordem_servico"].astype(str).isin(remover_os)]
 
-    tecnico = (
-        df_final["tecnico"].iloc[0]
-        if not df_final.empty
-        else "-"
-    )
+    # ===============================
+    # 6) Recalcula total
+    # ===============================
+    total = df["valor_a_pagar"].sum()
+    total_os = len(df)
 
-    empresa = (
-        df_final["empresa"].iloc[0]
-        if not df_final.empty
-        else "-"
-    )
+    # ===============================
+    # 7) Cabeçalho
+    # ===============================
+    nome_exibicao = tecnico.split("_")[0]
 
-    st.markdown("## 📊 Resumo Financeiro")
+    st.markdown("### 🧾 RESUMO DE INSTALAÇÕES")
+    st.write(f"**Data referência:** {data_inicio:%d/%m} - {data_fim:%d/%m}")
+    if data_pagamento:
+        st.write(f"**Data pagamento:** {data_pagamento:%d/%m/%Y}")
+    st.write(f"**Nome retirador:** {nome_exibicao}")
+    st.write("**Empresa:** AMZ")
 
-    col1, col2, col3 = st.columns(3)
+    st.markdown(f"### 📦 Total de OS: {total_os}")
+    st.markdown(f"## 💰 TOTAL A RECEBER: R$ {total:,.2f}")
 
-    col1.metric("Empresa", empresa)
-    col2.metric("Técnico", tecnico)
-    col3.metric(
-        "Total a Receber",
-        formatar_moeda(total_receber),
-    )
+    # ===============================
+    # 8) Tabela final
+    # ===============================
+    st.markdown("### 🧪 Auditoria Manual (corrigir antes do pagamento)")
 
-    # =========================
-    # TABELA FINAL
-    # =========================
-    st.subheader("📄 Relatório Final")
-
-    colunas_finais = [
-        "empresa",
+    editable_df = df[[
+        "id",
         "codigo_cliente",
-        "codigo_os",
-        "tecnico",
-        "status_os",
+        "numero_ordem_servico",
+        "usuario_fechamento",
+        "status_auditoria",
         "status_financeiro",
-        "valor_a_pagar",
-        "cliente_duplicado",
-    ]
+        "valor_a_pagar"
+    ]].copy()
+
+    edited = st.data_editor(
+        editable_df,
+        num_rows="fixed",
+        use_container_width=True,
+        column_config={
+            "status_auditoria": st.column_config.SelectboxColumn(
+                "STATUS",
+                options=["APROVADO", "N.C APROVADO", "REPROVADO", "REPROVADO PARCIAL", "NAO AUDITADO"]
+            )
+        }
+    )
+
+
+    def highlight(row):
+        if row["DUPLICADO"]:
+            return ["background-color: #ffcccc"] * len(row)
+        return [""] * len(row)
 
     st.dataframe(
-        df_final[colunas_finais],
+        tabela.style.apply(highlight, axis=1),
         use_container_width=True,
-        hide_index=True,
-    )
-
-    # =========================
-    # EXPORTAÇÃO
-    # =========================
-    st.download_button(
-        "⬇️ Exportar Relatório Financeiro",
-        df_final[colunas_finais].to_csv(index=False),
-        file_name="resumo_instalacoes_financeiro.csv",
-        mime="text/csv",
+        hide_index=True
     )

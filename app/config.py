@@ -68,6 +68,7 @@ class GoogleSheetsConfig:
     sheet_name: str
 
 
+
 def get_google_sheets_config() -> GoogleSheetsConfig:
     """
     Retorna configuração do Google Sheets (Service Account)
@@ -78,6 +79,6 @@ def get_google_sheets_config() -> GoogleSheetsConfig:
         private_key=_get_env("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
         client_email=_get_env("GOOGLE_CLIENT_EMAIL"),
         client_id=_get_env("GOOGLE_CLIENT_ID"),
-        spreadsheet_id=_get_env("GOOGLE_SHEET_ID"),
+        spreadsheet_id=_get_env("GOOGLE_SHEET_ID_51"),
         sheet_name=_get_env("GOOGLE_SHEET_NAME"),
     )

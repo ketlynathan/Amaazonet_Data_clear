@@ -21,6 +21,7 @@ from app.ui.relatorio_planilha_app import render_planilha
 from app.ui.relatorio_financeiro_instalacoes_app import (
     render_relatorio_financeiro_instalacoes,
 )
+from app.ui.debug_financeiro_app import render_debug_sheets
 
 
 
@@ -44,6 +45,7 @@ pagina = st.sidebar.radio(
         "Fechamento de Técnicos",  # 👈 NOVA OPÇÃO
         "Fechamento de Técnicos Metabase",
         "Relatório Financeiro Instalações",  # 👈 NOVA OPÇÃO
+        "Debug Financeiro",
         
 
     ],
@@ -75,3 +77,6 @@ elif pagina == "Planilha Google":
 
 elif pagina == "Relatório Financeiro Instalações":
     render_relatorio_financeiro_instalacoes()
+    
+elif pagina == "Debug Financeiro":
+    render_debug_sheets()

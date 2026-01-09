@@ -68,7 +68,7 @@ def render_fechamento_metabase():
         contas = st.multiselect(
             "Contas",
             ["mania", "amazonet"],
-            default=["mania"],
+            default=["amazonet", "mania"],
         )
 
         hoje = date.today()

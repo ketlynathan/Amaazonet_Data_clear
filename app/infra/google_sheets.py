@@ -1,36 +1,48 @@
-# app/infra/google_sheets.py
 import pandas as pd
 import streamlit as st
+from typing import List
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
 from app.config import get_google_sheets_config
 
+# ======================================================
+# GOOGLE API
+# ======================================================
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def get_sheets_service():
+    """
+    Cria e cacheia o client da Google Sheets API
+    """
     cfg = get_google_sheets_config()
 
     credentials = Credentials.from_service_account_info(
-        {
-            "type": "service_account",
-            "project_id": cfg.project_id,
-            "private_key_id": cfg.private_key_id,
-            "private_key": cfg.private_key,
-            "client_email": cfg.client_email,
-            "client_id": cfg.client_id,
-            "token_uri": "https://oauth2.googleapis.com/token",
-        },
-        scopes=SCOPES,
-    )
+    {
+        "type": "service_account",
+        "project_id": cfg.project_id,
+        "private_key_id": cfg.private_key_id,
+        "private_key": cfg.private_key.replace("\\n", "\n"),
+        "client_email": cfg.client_email,
+        "client_id": cfg.client_id,
+        "token_uri": "https://oauth2.googleapis.com/token",
+    },
+    scopes=SCOPES,
+)
 
     return build("sheets", "v4", credentials=credentials)
 
 
-@st.cache_data(ttl=300)
-def read_sheet_as_dataframe():
+# ======================================================
+# LEITURA DA PLANILHA
+# ======================================================
+@st.cache_data(ttl=300, show_spinner=False)
+def read_sheet_as_dataframe() -> pd.DataFrame:
+    """
+    Lê a aba configurada do Google Sheets e retorna DataFrame
+    """
     cfg = get_google_sheets_config()
     service = get_sheets_service()
 
@@ -39,14 +51,14 @@ def read_sheet_as_dataframe():
         .values()
         .get(
             spreadsheetId=cfg.spreadsheet_id,
-            range=f"'{cfg.sheet_name}'"
+            range=cfg.sheet_name,
         )
         .execute()
     )
 
     values = result.get("values", [])
 
-    if len(values) < 2:
+    if not values or len(values) < 2:
         return pd.DataFrame()
 
     raw_headers = values[0]
@@ -61,25 +73,28 @@ def read_sheet_as_dataframe():
         for row in rows
     ]
 
-    df = pd.DataFrame(normalized_rows, columns=headers)
+    return pd.DataFrame(normalized_rows, columns=headers)
 
-    return df
 
-def normalize_headers(headers: list[str]) -> list[str]:
+# ======================================================
+# NORMALIZAÇÃO DE CABEÇALHOS
+# ======================================================
+def normalize_headers(headers: List[str]) -> List[str]:
+    """
+    Garante colunas:
+    - sem vazios
+    - sem duplicatas
+    - limpas
+    """
     seen = {}
     normalized = []
 
     for i, col in enumerate(headers):
-        col = (col or "").strip()
+        col = (col or "").strip().replace("\n", " ")
 
-        # Se estiver vazio, cria nome genérico
         if not col:
             col = f"COL_{i+1}"
 
-        # Remove caracteres estranhos
-        col = col.replace("\n", " ").strip()
-
-        # Garante unicidade
         if col in seen:
             seen[col] += 1
             col = f"{col}_{seen[col]}"
@@ -89,4 +104,3 @@ def normalize_headers(headers: list[str]) -> list[str]:
         normalized.append(col)
 
     return normalized
-
