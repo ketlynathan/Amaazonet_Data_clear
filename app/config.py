@@ -115,4 +115,5 @@ def get_hubsoft_account_config(account: str) -> HubSoftAccountConfig:
         client_secret=_get_env(f"{prefix}CLIENT_SECRET"),
         user=_get_env(f"{prefix}USER"),
         password=_get_env(f"{prefix}PASSWORD"),
+        spreadsheet_id=_get_env("GOOGLE_SHEET_ID_51"),
     )
