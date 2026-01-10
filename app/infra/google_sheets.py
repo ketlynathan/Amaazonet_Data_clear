@@ -1,14 +1,18 @@
-# app/infra/google_sheets.py
 import pandas as pd
 import streamlit as st
+import time
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 from app.config import get_google_sheets_config
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 
+# ============================================================
+# Google Sheets Service (1 vez por sessão)
+# ============================================================
 @st.cache_resource
 def get_sheets_service():
     cfg = get_google_sheets_config()
@@ -29,20 +33,51 @@ def get_sheets_service():
     return build("sheets", "v4", credentials=credentials)
 
 
+# ============================================================
+# Leitor resiliente das planilhas 51 e 60
+# ============================================================
 @st.cache_data(ttl=300)
-def read_sheet_as_dataframe():
+def read_sheet_as_dataframe(sheet_key="60"):
     cfg = get_google_sheets_config()
     service = get_sheets_service()
 
-    result = (
-        service.spreadsheets()
-        .values()
-        .get(
-            spreadsheetId=cfg.spreadsheet_id,
-            range=f"'{cfg.sheet_name}'"
-        )
-        .execute()
-    )
+    # Mapeia qual planilha usar
+    sheet_map = {
+        "51": cfg.spreadsheet_51,
+        "60": cfg.spreadsheet_60,
+    }
+
+    spreadsheet_id = sheet_map.get(sheet_key)
+
+    if not spreadsheet_id:
+        raise ValueError(f"Planilha inválida: {sheet_key}")
+
+    tentativas = 3
+
+    for tentativa in range(tentativas):
+        try:
+            result = (
+                service.spreadsheets()
+                .values()
+                .get(
+                    spreadsheetId=spreadsheet_id,
+                    range=f"'{cfg.sheet_name}'"
+                )
+                .execute()
+            )
+            break
+        except HttpError as e:
+            # Proteção contra Google instável
+            if e.resp.status in [429, 500, 503]:
+                if tentativa < tentativas - 1:
+                    time.sleep(2 + tentativa)
+                    continue
+                else:
+                    raise RuntimeError(
+                        "⚠️ Google Sheets temporariamente indisponível. Tente novamente em alguns segundos."
+                    )
+            else:
+                raise e
 
     values = result.get("values", [])
 
@@ -53,7 +88,6 @@ def read_sheet_as_dataframe():
     rows = values[1:]
 
     headers = normalize_headers(raw_headers)
-
     num_cols = len(headers)
 
     normalized_rows = [
@@ -61,10 +95,12 @@ def read_sheet_as_dataframe():
         for row in rows
     ]
 
-    df = pd.DataFrame(normalized_rows, columns=headers)
+    return pd.DataFrame(normalized_rows, columns=headers)
 
-    return df
 
+# ============================================================
+# Normalizador de cabeçalhos
+# ============================================================
 def normalize_headers(headers: list[str]) -> list[str]:
     seen = {}
     normalized = []
@@ -72,14 +108,11 @@ def normalize_headers(headers: list[str]) -> list[str]:
     for i, col in enumerate(headers):
         col = (col or "").strip()
 
-        # Se estiver vazio, cria nome genérico
         if not col:
             col = f"COL_{i+1}"
 
-        # Remove caracteres estranhos
         col = col.replace("\n", " ").strip()
 
-        # Garante unicidade
         if col in seen:
             seen[col] += 1
             col = f"{col}_{seen[col]}"
@@ -89,4 +122,3 @@ def normalize_headers(headers: list[str]) -> list[str]:
         normalized.append(col)
 
     return normalized
-

@@ -50,70 +50,31 @@ def get_hubsoft_account_config(account: str) -> HubSoftAccountConfig:
 
 # === GOOGLE SHEETS CONFIG =======================================
 
-@dataclass(frozen=True)
+@dataclass
 class GoogleSheetsConfig:
     project_id: str
     private_key_id: str
     private_key: str
     client_email: str
     client_id: str
-    spreadsheet_id: str
+
+    spreadsheet_60: str
+    spreadsheet_51: str
+
     sheet_name: str
 
 
-def get_google_sheets_config() -> GoogleSheetsConfig:
+def get_google_sheets_config():
     return GoogleSheetsConfig(
-        project_id=_get_env("GOOGLE_PROJECT_ID"),
-        private_key_id=_get_env("GOOGLE_PRIVATE_KEY_ID"),
-        private_key=_get_env("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
-        client_email=_get_env("GOOGLE_CLIENT_EMAIL"),
-        client_id=_get_env("GOOGLE_CLIENT_ID"),
-        spreadsheet_id=_get_env("GOOGLE_SHEET_ID"),
-        sheet_name=_get_env("GOOGLE_SHEET_NAME"),
+        project_id=os.getenv("GOOGLE_PROJECT_ID"),
+        private_key_id=os.getenv("GOOGLE_PRIVATE_KEY_ID"),
+        private_key=os.getenv("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
+        client_email=os.getenv("GOOGLE_CLIENT_EMAIL"),
+        client_id=os.getenv("GOOGLE_CLIENT_ID"),
+
+        spreadsheet_60=os.getenv("GOOGLE_SHEET_ID"),
+        spreadsheet_51=os.getenv("GOOGLE_SHEET_ID_51"),
+
+        sheet_name=os.getenv("GOOGLE_SHEET_NAME"),
     )
 
-import os
-from dataclasses import dataclass
-from dotenv import load_dotenv
-
-
-load_dotenv()
-
-
-@dataclass(frozen=True)
-class HubSoftAccountConfig:
-    name: str
-    token_url: str
-    api_base: str
-    client_id: str
-    client_secret: str
-    user: str
-    password: str
-    timeout: int = 30
-
-
-def _get_env(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise EnvironmentError(f"Variável de ambiente ausente: {name}")
-    return value
-
-
-def get_hubsoft_account_config(account: str) -> HubSoftAccountConfig:
-    account = account.upper()
-
-    if account not in {"MANIA", "AMAZONET"}:
-        raise ValueError("Conta HubSoft inválida. Use 'mania' ou 'amazonet'.")
-
-    prefix = f"HUBSOFT_{account}_"
-
-    return HubSoftAccountConfig(
-        name=account.lower(),
-        token_url=_get_env(f"{prefix}TOKEN_URL"),
-        api_base=_get_env(f"{prefix}API_BASE"),
-        client_id=_get_env(f"{prefix}CLIENT_ID"),
-        client_secret=_get_env(f"{prefix}CLIENT_SECRET"),
-        user=_get_env(f"{prefix}USER"),
-        password=_get_env(f"{prefix}PASSWORD"),
-        spreadsheet_id=_get_env("GOOGLE_SHEET_ID_51"),
-    )
