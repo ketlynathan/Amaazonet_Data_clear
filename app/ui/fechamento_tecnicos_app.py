@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 
+from app.ui.relatorio_financeiro_instalacoes_app import render_relatorio_financeiro_instalacoes
+
 from app.analysis.relatorios.fechamento_tecnicos import (
     relatorio_fechamento_tecnicos_df,
 )
@@ -11,6 +13,7 @@ from app.analysis.relatorios.fechamento_tecnicos import (
 # ======================================================
 COL_TECNICO = "usuario_fechamento.name"
 COL_TIPO_OS = "tipo_ordem_servico.descricao"
+codigo_cliente = "dados_cliente.codigo_cliente"
 
 TIPOS_OS_FECHAMENTO_POR_CONTA = {
     "amazonet": [
@@ -43,6 +46,8 @@ st.set_page_config(
 # ======================================================
 @st.cache_data(ttl=900)
 def carregar_df_base(contas, data_inicio, data_fim, estados):
+    st.session_state["data_inicio_filtro"] = data_inicio
+    st.session_state["data_fim_filtro"] = data_fim
     return relatorio_fechamento_tecnicos_df(
         contas=contas,
         data_inicio=data_inicio,
@@ -237,12 +242,34 @@ def render():
         hide_index=True,
     )
 
-    # =========================
-    # EXPORTAÇÃO
-    # =========================
-    st.download_button(
-        "⬇️ Exportar CSV",
-        df[colunas_exibir].to_csv(index=False),
-        file_name="relatorio_fechamento_tecnico.csv",
-        mime="text/csv",
-    )
+    df_final_tec = df.copy()
+
+    df_final_tec = df_final_tec.rename(columns={
+    "dados_cliente.codigo_cliente": "codigo_cliente",
+    "numero": "numero_ordem_servico",
+    "usuario_fechamento.name": "usuario_fechamento",
+    })
+
+    # segurança mínima
+    colunas_obrigatorias = {
+        "codigo_cliente",
+        "numero_ordem_servico",
+        "usuario_fechamento",
+    }
+
+    faltando = colunas_obrigatorias - set(df_final_tec.columns)
+    if faltando:
+        st.error(f"Colunas obrigatórias ausentes para o financeiro: {faltando}")
+        return
+
+# 🔗 DISPONIBILIZA PARA O FINANCEIRO
+    st.session_state["df_fechamento_filtrado"] = df_final_tec
+
+    if not df_final_tec.empty:
+        st.markdown("---")
+        st.header("💰 Relatório Financeiro")
+        render_relatorio_financeiro_instalacoes()
+
+
+
+   

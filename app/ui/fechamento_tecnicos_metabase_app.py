@@ -8,7 +8,7 @@ from app.services.metabase_service import carregar_fechamento_metabase
 # COLUNAS REAIS (JSON CONFIRMADO)
 # ======================================================
 COL_NUMERO = "numero_ordem_servico"
-COL_TECNICO = "usuario_fechamento"
+COL_TECNICO = "usuario_fechamento.name"
 COL_TIPO_OS = "tipo_ordem_servico"
 COL_DATA_FIM = "data_termino_executado"
 

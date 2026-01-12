@@ -14,9 +14,6 @@ COL_ESTADO = "dados_endereco_instalacao.estado"
 STATUS_MONITORADOS = [
     "Finalizado",
     "Pendente",
-    "Aguardando Agendamento (Reservada)",
-    "Pendente (Reservada)",
-    "Pendente (Reservada) - (Em Execução há 15 minutos)",
 ]
 
 # ======================================================
