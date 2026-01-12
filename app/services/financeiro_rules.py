@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as streamlit
 from app.infra.google_sheets import read_sheet_as_dataframe
 
 
@@ -8,8 +9,12 @@ def aplicar_regras_financeiras(df_base: pd.DataFrame) -> pd.DataFrame:
     # ======================================================
     # 1️⃣ Lê as duas planilhas
     # ======================================================
-    sheet_51 = read_sheet_as_dataframe("51")
-    sheet_60 = read_sheet_as_dataframe("60")
+    @streamlit.cache_data(ttl=600)
+    def carregar_planilhas():
+        sheet_51 = read_sheet_as_dataframe("51")
+        sheet_60 = read_sheet_as_dataframe("60")
+        return sheet_51, sheet_60
+    
 
     # ======================================================
     # 2️⃣ Normaliza planilha 51

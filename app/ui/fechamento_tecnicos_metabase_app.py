@@ -3,12 +3,13 @@ import pandas as pd
 from datetime import date, timedelta
 
 from app.services.metabase_service import carregar_fechamento_metabase
+from app.ui.relatorio_financeiro_instalacoes_app import render_relatorio_financeiro_instalacoes
 
 # ======================================================
 # COLUNAS REAIS (JSON CONFIRMADO)
 # ======================================================
 COL_NUMERO = "numero_ordem_servico"
-COL_TECNICO = "usuario_fechamento.name"
+COL_TECNICO = "usuario_fechamento"
 COL_TIPO_OS = "tipo_ordem_servico"
 COL_DATA_FIM = "data_termino_executado"
 
@@ -221,13 +222,8 @@ def render_fechamento_metabase():
     # 🔗 DISPONIBILIZA PARA O FINANCEIRO
     st.session_state["df_fechamento_filtrado"] = df_final
 
+    if not df_final.empty:
+        st.markdown("---")
+        st.header("💰 Relatório Financeiro")
+        render_relatorio_financeiro_instalacoes()
 
-    # =========================
-    # EXPORTAÇÃO
-    # =========================
-    st.download_button(
-        "⬇️ Exportar CSV",
-        df_exibir.to_csv(index=False),
-        file_name="fechamento_tecnico_metabase.csv",
-        mime="text/csv",
-    )

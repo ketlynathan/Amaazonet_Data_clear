@@ -19,39 +19,38 @@ def render_relatorio_financeiro_instalacoes():
     # ======================================================
     # 2️⃣ Aplica regras financeiras
     # ======================================================
-    df = aplicar_regras_financeiras(df_base)
+    def aplicar_regras_financeiras(df_base):
+        df_financeiro = aplicar_regras_financeiras(df_base)
+        return df_financeiro    
 
     # ======================================================
     # 3️⃣ Filtro por técnico / grupo
     # ======================================================
-    tecnicos = sorted(df["usuario_fechamento"].dropna().unique())
+        tecnicos = sorted(df["usuario_fechamento"].dropna().unique())
 
-    tecnico_selecionado = st.selectbox("👷 Técnico", tecnicos)
+        tecnico_selecionado = st.selectbox("👷 Técnico", tecnicos)
 
-    # REGRA DE FILTRO FINANCEIRO
-    if "LOBATOS" in tecnico_selecionado.upper():
-        df = df[df["usuario_fechamento"].str.contains("LOBATOS", case=False, na=False)]
-    else:
-        df = df[df["usuario_fechamento"] == tecnico_selecionado]
+        # REGRA DE FILTRO FINANCEIRO
+        if "LOBATOS" in tecnico_selecionado.upper():
+            df = df[df["usuario_fechamento"].str.contains("LOBATOS", case=False, na=False)]
+        else:
+            df = df[df["usuario_fechamento"] == tecnico_selecionado]
 
-    if df.empty:
-        st.warning("Nenhum registro encontrado.")
-        return
-
+        if df.empty:
+            st.warning("Nenhum registro encontrado.")
+            return
 
     # ======================================================
-    # 4️⃣ Datas de referência (vindas do filtro)
+    # 4️⃣ Datas de referência
     # ======================================================
-    data_inicio = st.session_state.get("data_inicio_filtro")
-    data_fim = st.session_state.get("data_fim_filtro")
 
-    data_pagamento = (
-        data_fim + timedelta(days=1)
-        if data_fim is not None
-        else None
+    df["data_termino_executado"] = pd.to_datetime(
+    df["data_termino_executado"], dayfirst=True, errors="coerce"
     )
 
-
+    data_fim = df["data_termino_executado"].max()
+    data_inicio = data_fim - timedelta(days=5) if pd.notnull(data_fim) else None
+    data_pagamento = data_fim + timedelta(days=1) if pd.notnull(data_fim) else None
 
     # ======================================================
     # 5️⃣ Identifica clientes duplicados
@@ -77,18 +76,18 @@ def render_relatorio_financeiro_instalacoes():
     # ======================================================
     # 6️⃣ Totais
     # ======================================================
-    df["valor_a_pagar"] = (
-    df["valor_a_pagar"]
-    .astype(str)
-    .str.replace("R$", "", regex=False)
-    .str.replace(",", ".", regex=False)
+    total_final["valor_a_pagar"] = (
+        total_final["valor_a_pagar"]
+        .astype(str)
+        .str.replace("R$", "", regex=False)
+        .str.replace(".", "", regex=False)
+        .str.replace(",", ".", regex=False)
     )
 
-    df["valor_a_pagar"] = pd.to_numeric(
-        df["valor_a_pagar"],
-        errors="coerce"
-    ).fillna(0)
-    total = df["valor_a_pagar"].sum()
+    total_final["valor_a_pagar"] = pd.to_numeric(total_final["valor_a_pagar"], errors="coerce").fillna(0)
+
+    total_final = total_final["valor_a_pagar"].sum()
+
     total_os = len(df)
 
     # ======================================================
@@ -97,37 +96,23 @@ def render_relatorio_financeiro_instalacoes():
     st.markdown("### 🧾 RESUMO DE INSTALAÇÕES")
 
     if data_inicio is not None and data_fim is not None:
-        st.write(
-        f"**Data referência:** {data_inicio:%d/%m/%Y} - {data_fim:%d/%m/%Y}"
-    )
+            st.write(f"**Data referência:** {data_inicio:%d/%m} - {data_fim:%d/%m}")
+
+    if data_pagamento:
+            st.write(f"**Data pagamento:** {data_pagamento:%d/%m/%Y}")
+
+    if "LOBATOS" in tecnico_selecionado.upper():
+            nome_exibicao = "Leidinaldo Lobato da Fonseca"
     else:
-        st.warning("Período de referência não definido pelo filtro.")
+            nome_exibicao = tecnico_selecionado
 
-    if data_pagamento is not None:
-        st.write(
-        f"**Data pagamento:** {data_pagamento:%d/%m/%Y}"
-    )
-
-    # Normaliza o nome do técnico selecionado
-    nome_base = (
-        tecnico_selecionado
-        .split("_")[0]
-        .strip()
-    )
-
-    # Regra especial para Lobatos
-    if "LOBATOS" in nome_base.upper():
-        nome_exibicao = "Leidinaldo Lobato da Fonseca"
-    else:
-        nome_exibicao = nome_base
-
-    st.write(f"**Nome do Técnico:** {nome_exibicao}")
+    st.write(f"**Nome retirador:** {nome_exibicao}")
 
     # Empresa pela coluna conta
     contas = df["conta"].dropna().unique()
 
     if len(contas) == 1:
-        conta = contas[0]
+            onta = contas[0]
     else:
         conta = "MISTO"
 
@@ -136,7 +121,7 @@ def render_relatorio_financeiro_instalacoes():
     elif str(conta).upper().startswith("AMAZ") or str(conta).upper().startswith("AMZ"):
         empresa = "AMZ"
     else:
-        empresa = conta
+            empresa = conta
 
     st.write(f"**Empresa:** {empresa}")
 
@@ -150,14 +135,22 @@ def render_relatorio_financeiro_instalacoes():
         subset=["codigo_cliente", "numero_ordem_servico"],
         keep="first"
     )
-    df["DUPLICADO"] = df.duplicated(
-        subset=["codigo_cliente"],
-        keep=False
-    )
+
+    df.copy()
+    # Marca clientes duplicados (mesmo cliente em OS diferentes)
+    df["DUPLICADO"] = df.duplicated(subset=["codigo_cliente"], keep=False)
+    def highlight(row):
+        if row["DUPLICADO"]:
+            return ["background-color: #ffcccc"] * len(row)
+        return [""] * len(row)
+    
+
+
+
     # ======================================================
-    # 9️⃣ Tabela de auditoria (visual com destaque)
+    # 9️⃣ Tabela de auditoria única
     # ======================================================
-    st.markdown("Relatório Fechamento Técnicos")
+    st.markdown("### 🧪 Auditoria Financeira")
 
     auditoria_df = df[
         [
@@ -167,7 +160,6 @@ def render_relatorio_financeiro_instalacoes():
             "status_auditoria",
             "status_financeiro",
             "valor_a_pagar",
-            "DUPLICADO",
         ]
     ].copy()
 
@@ -180,51 +172,27 @@ def render_relatorio_financeiro_instalacoes():
     auditoria_df = auditoria_df.reset_index(drop=True)
     auditoria_df.index = auditoria_df.index + 1
 
-
-    def destacar_duplicados(row):
-        if row["DUPLICADO"]:
-            return ["background-color: #ffcccc"] * len(row)
-        return [""] * len(row)
-
-
-    st.dataframe(
-        auditoria_df
-        .style
-        .apply(destacar_duplicados, axis=1),
-        use_container_width=True
-    )
-
     # ======================================================
-    # 🔟 Editor (sem estilo, mas editável)
+    # 10️⃣ Editor único
     # ======================================================
-    edited = st.data_editor(
-        auditoria_df.drop(columns=["DUPLICADO"]),
-        num_rows="fixed",
-        use_container_width=True,
-        column_config={
-            "status_auditoria": st.column_config.SelectboxColumn(
-                "Status Auditoria",
-                options=[
-                    "",
-                    "APROVADO",
-                    "N.C APROVADO",
-                    "REPROVADO",
-                    "REPROVADO PARCIAL",
-                    "NAO AUDITADO",
-                ],
-            ),
-            "status_financeiro": st.column_config.SelectboxColumn(
-                "Status Financeiro",
-                options=["", "PAGO", "-"],
-            ),
-            "valor_a_pagar": st.column_config.NumberColumn(
-                "Valor a pagar",
-                min_value=0,
-                step=10,
-            ),
-        },
-    )
-
+    #edited = st.data_editor(
+      #  auditoria_df,
+       # num_rows="fixed",
+       # use_container_width=True,
+       # column_config={
+          #  "status_auditoria": st.column_config.SelectboxColumn(
+         #       "Status Auditoria",
+      #          options=["", "APROVADO", "N.C APROVADO", "REPROVADO", "REPROVADO PARCIAL", "NAO AUDITADO"],
+     #       ),
+     #       "status_financeiro": st.column_config.SelectboxColumn(
+     #           "Status Financeiro",
+     #           options=["", "PAGO", "-"],
+      #      ),
+      #      "valor_a_pagar": st.column_config.NumberColumn(
+      #          "Valor a pagar", min_value=0, step=10
+       #     ),
+      #  },
+   # )
 
     # ======================================================
     # 11️⃣ Regras automáticas de pagamento
@@ -234,13 +202,15 @@ def render_relatorio_financeiro_instalacoes():
             return 0
         return row["valor_a_pagar"]
 
-    edited["valor_a_pagar"] = edited.apply(recalcular, axis=1)
+    #edited["valor_a_pagar"] = edited.apply(recalcular, axis=1)
 
     # ======================================================
     # 12️⃣ Total final
     # ======================================================
-    total_final = edited["valor_a_pagar"].sum()
+    #total_final = edited["valor_a_pagar"].sum()
 
     st.markdown("### 📊 Resultado Final")
-    st.dataframe(edited, use_container_width=True)
+    #st.dataframe(edited, use_container_width=True)
 
+    #st.markdown(f"## 💰 TOTAL FINAL A PAGAR: R$ {total_final:,.2f}")
+    st.markdown("---")
