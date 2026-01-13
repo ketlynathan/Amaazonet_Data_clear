@@ -64,29 +64,24 @@ def render_fechamento_metabase():
     # SIDEBAR
     # =========================
     with st.sidebar:
-        st.subheader("🔎 Filtros base")
+        st.subheader("🔎 Filtros base") 
+        contas = st.multiselect( 
+            "Contas", ["mania", "amazonet"], 
+            default=["amazonet", "mania"], )
 
-        contas = st.multiselect(
-            "Contas",
-            ["mania", "amazonet"],
-            default=["amazonet", "mania"],
-        )
-
-        hoje = date.today()
-
-        data_inicio = st.date_input(
-            "Data início",
-            hoje - timedelta(days=7),
-        )
-
+        hoje = date.today() 
+        data_inicio = st.date_input( 
+            "Data início", 
+            hoje - timedelta(days=7), 
+            ) 
         data_fim = st.date_input(
-            "Data fim",
-            hoje,
-        )
+             "Data fim", hoje, 
+             ) 
+        gerar = st.button("📊 Gerar relatório") 
+        
+        if "df_fechamento_filtrado" not in st.session_state: st.session_state["df_fechamento_filtrado"] = pd.DataFrame()
 
-        gerar = st.button("📊 Gerar relatório")
-        if "df_fechamento_filtrado" not in st.session_state:
-            st.session_state["df_fechamento_filtrado"] = pd.DataFrame()
+
 
     # =========================
     # CARREGAMENTO (SÓ NO BOTÃO)

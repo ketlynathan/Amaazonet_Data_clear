@@ -1,6 +1,9 @@
 import sys
 from pathlib import Path
 import pandas as pd
+import streamlit as st
+from datetime import date, timedelta
+
 
 
 # 🔥 Garante que a raiz do projeto esteja no PYTHONPATH
