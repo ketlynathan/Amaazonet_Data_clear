@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 
-from app.services.metabase_service import carregar_fechamento_metabase
+from app.analysis.metabase_service import carregar_fechamento_metabase
 from app.ui.relatorio_financeiro_instalacoes_app import render_relatorio_financeiro_instalacoes
 
 # ======================================================

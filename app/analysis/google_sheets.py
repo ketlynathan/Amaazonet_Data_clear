@@ -43,9 +43,10 @@ def read_sheet_as_dataframe(sheet_key="60"):
 
     # Mapeia qual planilha usar
     sheet_map = {
-        "51": cfg.spreadsheet_51,
-        "60": cfg.spreadsheet_60,
-    }
+    "51": cfg.spreadsheet_51,
+    "60": cfg.spreadsheet_60,
+    "51_STM": cfg.spreadsheet_51_stm ,
+}
 
     spreadsheet_id = sheet_map.get(sheet_key)
 

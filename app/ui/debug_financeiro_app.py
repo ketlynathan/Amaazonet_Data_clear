@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from app.infra.google_sheets import read_sheet_as_dataframe
+from app.analysis.google_sheets import read_sheet_as_dataframe
 
 
 def render_debug_sheets():
@@ -105,3 +105,48 @@ def render_debug_sheets():
 
         except Exception as e:
             st.error(f"Erro ao recortar colunas da 60: {e}")
+        
+    read_sheet_as_dataframe("51_STM")
+        # ======================================================
+    # 4️⃣ Planilha 51_STM — Auditoria Complementar
+    # ======================================================
+    st.subheader("📄 Planilha 51_STM (Auditoria Complementar)")
+
+    with st.spinner("Lendo planilha 51_STM..."):
+        sheet_stm = read_sheet_as_dataframe("51_STM")
+
+    if sheet_stm.empty:
+        st.error("Planilha 51_STM vazia.")
+    else:
+        st.write("Colunas reais da 51_STM:")
+        st.write({i: c for i, c in enumerate(sheet_stm.columns)})
+        st.dataframe(sheet_stm.head(300), use_container_width=True)
+
+        try:
+            # AJUSTE OS ÍNDICES SE NECESSÁRIO APÓS VER AS COLUNAS
+            df_stm_debug = sheet_stm.iloc[:, [2, 3, 33]].copy()
+
+            df_stm_debug.columns = [
+                "codigo_cliente",
+                "codigo_os",
+                "status_51_stm",
+            ]
+
+            for c in df_stm_debug.columns:
+                df_stm_debug[c] = df_stm_debug[c].astype(str).str.strip()
+
+            st.subheader("🎯 Dados usados da 51_STM")
+            st.dataframe(df_stm_debug.head(300), use_container_width=True)
+
+            st.subheader("📊 Distribuição de status (51_STM)")
+            st.dataframe(
+                df_stm_debug["status_51_stm"]
+                .value_counts(dropna=False)
+                .reset_index()
+                .rename(columns={"index": "status", "status_51_stm": "qtd"})
+            )
+
+        except Exception as e:
+            st.error(f"Erro ao recortar colunas da 51_STM: {e}")
+
+

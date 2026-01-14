@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 
-from app.infra.google_sheets import read_sheet_as_dataframe
+from app.analysis.google_sheets import read_sheet_as_dataframe
 
 
 def render_planilha():
