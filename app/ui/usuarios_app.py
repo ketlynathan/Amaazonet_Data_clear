@@ -3,6 +3,9 @@ import pandas as pd
 import time
 
 from app.analysis.usuarios import carregar_usuarios_df
+from app.ui.components.navigation import botao_voltar_home
+
+
 
 # ======================================================
 # CONFIG
@@ -42,6 +45,7 @@ def badge(status):
 # TELA
 # ======================================================
 def render_usuarios():
+    botao_voltar_home()
     st.title("👤 Usuários")
 
     # =============================

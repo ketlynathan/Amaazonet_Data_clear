@@ -61,6 +61,7 @@ class GoogleSheetsConfig:
     spreadsheet_60: str
     spreadsheet_51: str
     spreadsheet_51_stm: str
+    spreadsheet_39: str 
 
     sheet_name: str
 
@@ -76,6 +77,7 @@ def get_google_sheets_config():
         spreadsheet_60=os.getenv("GOOGLE_SHEET_ID"),
         spreadsheet_51=os.getenv("GOOGLE_SHEET_ID_51"),
         spreadsheet_51_stm=os.getenv("GOOGLE_SHEET_ID_51_STM"),
+        spreadsheet_39=os.getenv("GOOGLE_SHEET_ID_39"),
 
 
         sheet_name=os.getenv("GOOGLE_SHEET_NAME"),

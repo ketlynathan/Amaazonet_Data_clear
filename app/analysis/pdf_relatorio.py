@@ -162,9 +162,9 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
         ])
 
     tabela = Table(data, repeatRows=1, colWidths=[
-        1*cm, 2*cm, 2.3*cm, 3.4*cm, 4.3*cm, 2.1*cm, 2.2*cm, 1.8*cm
+        1*cm, 2.1*cm, 2.3*cm, 3.5*cm, 3.8*cm, 2.2*cm, 2.2*cm, 1.5*cm
     ])
-
+ 
     tabela.setStyle(TableStyle([
         ("BACKGROUND",(0,0),(-1,0), cor_empresa),
         ("TEXTCOLOR",(0,0),(-1,0), colors.white),

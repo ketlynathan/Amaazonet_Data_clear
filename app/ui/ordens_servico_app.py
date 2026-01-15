@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date, timedelta
 
 from app.analysis.ordens_servico import carregar_ordens_servico_df
+from app.ui.components.navigation import botao_voltar_home
 
 # ======================================================
 # CONSTANTES DE COLUNAS (API REAL)
@@ -20,6 +21,7 @@ STATUS_MONITORADOS = [
 # APP
 # ======================================================
 def render_ordens_servico():
+    botao_voltar_home()
     st.title("🛠 Ordens de Serviço – HubSoft")
 
     # ======================================================
