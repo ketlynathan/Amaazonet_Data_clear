@@ -4,6 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 from app.analysis.financeiro_rules import aplicar_regras_financeiras
 from app.analysis.pdf_relatorio import montar_tabela
+from app.analysis.pdf_recibo import gerar_recibo_pagamento
 
 
 def render_relatorio_financeiro_instalacoes():
@@ -307,4 +308,26 @@ def render_relatorio_financeiro_instalacoes():
                 file_name=caminho.split("/")[-1],
                 mime="application/pdf",
             )
+    # Somente técnicos que NÃO são Nadinei podem gerar recibo
+    if "NADINEI" not in nome_exibicao.upper():
+
+        if st.button("🧾 Gerar Recibo"):
+            caminho_recibo = gerar_recibo_pagamento(
+                tecnico=nome_exibicao,
+                empresa=conta,
+                valor=total_final,              # ✅ agora bate com a função
+                data_pagamento=data_pagamento,
+                qtd_instalacoes=len(auditoria_df),
+            )
+
+            with open(caminho_recibo, "rb") as f:
+                st.download_button(
+                    "⬇️ Baixar Recibo",
+                    f,
+                    file_name=caminho_recibo.split("/")[-1],
+                    mime="application/pdf",
+                )
+
+
+    
 
