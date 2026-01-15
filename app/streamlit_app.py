@@ -22,7 +22,7 @@ from app.ui.debug_financeiro_app import render_debug_sheets
 #from app.ui.relatorio_financeiro_instalacoes_app import (
  #   render_relatorio_financeiro_instalacoes,
 #)
-#from app.ui.fechamento_tecnicos_app import render
+from app.ui.fechamento_tecnicos_app import render
 #from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
 
 
@@ -77,8 +77,8 @@ elif pagina == "Relatórios":
 elif pagina == "Ordens de Serviço":
     render_ordens_servico()
 
-#elif pagina == "Fechamento de Técnicos":
-   # render()
+elif pagina == "Fechamento de Técnicos":
+    render()
 
 #elif pagina == "Fechamento de Técnicos Metabase":
    # render_fechamento_metabase()
@@ -90,4 +90,4 @@ elif pagina == "Planilha Google":
     #render_relatorio_financeiro_instalacoes()
     
 elif pagina == "Debug Financeiro":
-    render_debug_sheets()
+    render_debug_sheets()     
