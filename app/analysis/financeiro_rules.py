@@ -76,13 +76,21 @@ def aplicar_regras_financeiras(df: pd.DataFrame) -> pd.DataFrame:
     # ======================================================
     # 6️⃣ Regra NADINEI
     # ======================================================
-    def escolher_status(row):
-        tecnico = row["usuario_fechamento"].upper()
-        if "NADINEI" in tecnico:
-            return row["status_51_stm"] or row["status_60"] or ""
-        return row["status_51"] or row["status_60"] or ""
+    def status_auditoria(row):
+        tecnico = str(row["usuario_fechamento"]).upper()
 
-    df["status_auditoria"] = df.apply(escolher_status, axis=1)
+        if "NADINEI" in tecnico:
+            if pd.notna(row["status_51_stm"]):
+                return row["status_51_stm"]
+            return ""
+
+        if pd.notna(row["status_51"]):
+            return row["status_51"]
+        if pd.notna(row["status_60"]):
+            return row["status_60"]
+
+        return ""
+    df["status_auditoria"] = df.apply(status_auditoria, axis=1)
 
     # ======================================================
     # 7️⃣ Status financeiro

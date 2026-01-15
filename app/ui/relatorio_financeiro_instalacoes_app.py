@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import timedelta
 from pathlib import Path
 from app.analysis.financeiro_rules import aplicar_regras_financeiras
-from app.analysis.pdf_financeiro import montar_tabela
+from app.analysis.pdf_relatorio import montar_tabela
 
 
 def render_relatorio_financeiro_instalacoes():
@@ -288,7 +288,7 @@ def render_relatorio_financeiro_instalacoes():
     )
 
 
-    if st.button("📄 Gerar PDF do Técnico"):
+    if st.button("📄 Gerar Relatório do Técnico"):
         caminho = montar_tabela(
             df=auditoria_df,                  # tabela final auditada
             tecnico=nome_exibicao,      # nome do técnico
