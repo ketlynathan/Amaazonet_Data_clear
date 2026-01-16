@@ -8,6 +8,33 @@ import os
 import re
 
 
+
+def limpar_nome_tecnico(nome):
+    if not nome:
+        return ""
+
+    nome = str(nome)
+
+    # Remove padrões técnicos
+    remover = [
+        "_TEC_TERC_MAO",
+        "_TEC",
+        "TEC_",
+    ]
+
+    for r in remover:
+        nome = nome.replace(r, "")
+
+    # Casos especiais
+    if "LOBATOS" in nome.upper():
+        return "Leidinaldo Lobato da Fonseca"
+
+    # Normaliza
+    nome = nome.replace("_", " ").strip()
+    return nome.title()
+
+
+
 def formatar_brl(valor):
     try:
         return f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -55,7 +82,7 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
     # =========================
     # TOPO
     # =========================
-    logo = Image(logo_path, width=3.5*cm, height=1.6*cm) if logo_path and os.path.exists(logo_path) else ""
+    logo = Image(logo_path, width=4*cm, height=4*cm) if logo_path and os.path.exists(logo_path) else ""
 
     titulo = Paragraph(
         "RESUMO INSTALAÇÕES",
@@ -145,7 +172,7 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
     # TABELA
     # =========================
     data = [[
-        "Nº","EMPRESA","CÓD CLIENTE","CÓD O.S",
+        "Nº","EMPRESA","CLIENTE","CÓD O.S",
         "TÉCNICO","STATUS","FINANCEIRO","VALOR"
     ]]
 
@@ -155,26 +182,35 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
             Paragraph(empresa, estilo_tabela),
             Paragraph(str(r.codigo_cliente), estilo_tabela),
             Paragraph(str(r.numero_ordem_servico), estilo_tabela),
-            Paragraph(str(r.usuario_fechamento).replace("_TEC_TERC_MAO", ""), estilo_tabela),
+            Paragraph(limpar_nome_tecnico(r.usuario_fechamento), estilo_tabela),
             Paragraph(str(r.status_auditoria), estilo_tabela),
             Paragraph(str(r.status_financeiro), estilo_tabela),
             Paragraph(formatar_brl(r.valor_a_pagar), estilo_tabela),
         ])
 
     tabela = Table(data, repeatRows=1, colWidths=[
-        1*cm, 2.1*cm, 2.3*cm, 3.5*cm, 3.8*cm, 2.2*cm, 2.2*cm, 1.5*cm
+        1*cm, 2*cm, 2.1*cm, 3.5*cm, 4*cm, 2.2*cm, 2.2*cm, 1.5*cm
     ])
  
     tabela.setStyle(TableStyle([
-        ("BACKGROUND",(0,0),(-1,0), cor_empresa),
-        ("TEXTCOLOR",(0,0),(-1,0), colors.white),
-        ("GRID",(0,0),(-1,-1),0.4,colors.black),
-        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
-        ("ALIGN",(0,0),(-1,0),"CENTER"),
-        ("ALIGN",(0,1),(0,-1),"CENTER"),
-        ("ALIGN",(-1,1),(-1,-1),"RIGHT"),
-        ("LEFTPADDING",(0,0),(-1,-1),4),
-        ("RIGHTPADDING",(0,0),(-1,-1),4),
+        # Cabeçalho
+        ("BACKGROUND", (0, 0), (-1, 0), cor_empresa),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+
+        # 👉 CORPO DA TABELA (AQUI)
+        ("ALIGN", (0, 1), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 1), (-1, -1), "MIDDLE"),
+
+        # Valor alinhado à direita (boa prática financeira)
+        ("ALIGN", (-1, 1), (-1, -1), "RIGHT"),
+
+        # Grid
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.black),
+
+        # Padding
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
     ]))
 
     elementos.append(tabela)

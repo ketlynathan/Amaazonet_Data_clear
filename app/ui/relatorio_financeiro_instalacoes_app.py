@@ -309,24 +309,25 @@ def render_relatorio_financeiro_instalacoes():
                 mime="application/pdf",
             )
     # Somente técnicos que NÃO são Nadinei podem gerar recibo
-    if "NADINEI" not in nome_exibicao.upper():
-
+    if tecnico_selecionado.upper() != "NADINEI":
         if st.button("🧾 Gerar Recibo"):
-            caminho_recibo = gerar_recibo_pagamento(
+            caminho = gerar_recibo_pagamento(
                 tecnico=nome_exibicao,
-                empresa=conta,
-                valor=total_final,              # ✅ agora bate com a função
-                data_pagamento=data_pagamento,
-                qtd_instalacoes=len(auditoria_df),
+                empresa=conta,  # MANIA ou AMAZONET
+                valor_total=total_final,
+                qtd_instalacoes=aprovadas,
+                data_pagamento=data_pagamento.strftime("%d/%m/%Y"),
             )
 
-            with open(caminho_recibo, "rb") as f:
+            with open(caminho, "rb") as f:
                 st.download_button(
                     "⬇️ Baixar Recibo",
                     f,
-                    file_name=caminho_recibo.split("/")[-1],
+                    file_name=Path(caminho).name,
                     mime="application/pdf",
                 )
+
+
 
 
     
