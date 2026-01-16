@@ -2,39 +2,47 @@ import streamlit as st
 from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
 from app.ui.components.navigation import botao_voltar_home
 
-
 def render_relatorios():
+    # Botão de voltar Home
     botao_voltar_home()
 
     st.markdown("## 📊 Relatórios")
+    st.markdown(
+        "<p style='color:#666;font-size:14px;'>Selecione o tipo de fechamento desejado abaixo</p>",
+        unsafe_allow_html=True
+    )
 
-    tipo = st.tabs(["📅 Fechamento Mensal", "📆 Fechamento Semanal"])
+    # Tabs para Semanal x Mensal
+    tabs = st.tabs(["📆 Fechamento Semanal", "📅 Fechamento Mensal"])
 
     # ===============================
     # FECHAMENTO MENSAL
     # ===============================
-    with tipo[0]:
+    with tabs[1]:
         st.info("🛠 Módulo em desenvolvimento")
         st.write("O fechamento mensal será disponibilizado em breve.")
 
     # ===============================
     # FECHAMENTO SEMANAL
     # ===============================
-    with tipo[1]:
+    with tabs[0]:
 
-        col1, col2, col3 = st.columns(3)
+        # Layout em cards clicáveis
+        cols = st.columns(3, gap="large")
+        card_info = [
+            {"label": "📋 Fechamento Técnico", "page": "tecnico", "enabled": True},
+            {"label": "📦 Fechamento Retirada", "page": "retirada", "enabled": False},
+            {"label": "💰 Venda Autônomo", "page": "venda", "enabled": False},
+        ]
 
-        with col1:
-            if st.button("📋 Fechamento Técnico", use_container_width=True):
-                st.session_state["relatorio_subtela"] = "tecnico"
-
-        with col2:
-            st.button("📦 Fechamento Retirada", disabled=True, use_container_width=True)
-            st.caption("Em manutenção")
-
-        with col3:
-            st.button("💰 Venda Autônomo", disabled=True, use_container_width=True)
-            st.caption("Em manutenção")
+        for i, item in enumerate(card_info):
+            with cols[i]:
+                if item["enabled"]:
+                    if st.button(item["label"], use_container_width=True):
+                        st.session_state["relatorio_subtela"] = item["page"]
+                else:
+                    st.button(item["label"] + " (Em breve)", disabled=True, use_container_width=True)
+                    st.caption("Em desenvolvimento")
 
         st.divider()
 
@@ -42,4 +50,5 @@ def render_relatorios():
         # RENDERIZA SUBTELAS
         # ===============================
         if st.session_state.get("relatorio_subtela") == "tecnico":
-            render_fechamento_metabase()
+            with st.spinner("Carregando Fechamento Técnico..."):
+                render_fechamento_metabase()

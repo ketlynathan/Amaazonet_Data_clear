@@ -1,15 +1,10 @@
 import streamlit as st
 from pathlib import Path
 
-from app.ui.usuarios_app import render_usuarios
-from app.ui.ordens_servico_app import render_ordens_servico
-from app.ui.relatorios_app import render_relatorios
-
-
 def render_home():
 
     # ===============================
-    # LOGOS
+    # HEADER COM LOGOS
     # ===============================
     col_logo1, col_title, col_logo2 = st.columns([1, 3, 1])
 
@@ -19,22 +14,18 @@ def render_home():
 
     with col_title:
         cols = st.columns([1, 6])
-
         if Path("app/img/hub.png").exists():
             cols[0].image("app/img/hub.png", width=60)
 
         cols[1].markdown(
             """
-            <div>
-                <h1 style="margin-bottom:0;">HubSoft Analytics</h1>
-                <p style="font-size:16px;color:#666;">
-                    Plataforma corporativa de gestão, auditoria e relatórios
-                </p>
+            <div style="text-align:center;">
+                <h1 style="margin-bottom:5px;color:#4B8BBE;">HubSoft Analytics</h1>
+                <p style="font-size:16px;color:#666;">Plataforma corporativa de gestão, auditoria e relatórios</p>
             </div>
             """,
             unsafe_allow_html=True
         )
-
 
     with col_logo2:
         if Path("app/img/mania.png").exists():
@@ -49,8 +40,8 @@ def render_home():
         """
         <div style="
             background:#f2f2f2;
-            padding:15px;
-            border-radius:8px;
+            padding:20px;
+            border-radius:10px;
             text-align:center;
             font-size:16px;
             font-weight:600;
@@ -64,37 +55,50 @@ def render_home():
     st.write("")
 
     # ===============================
-    # CARDS DE STATUS
+    # CARDS DE STATUS CUSTOMIZADOS
     # ===============================
-    col1, col2, col3, col4 = st.columns(4)
+    status_cards = [
+        {"title": "🔌 Status", "value": "Conectado", "color": "#DFF6DD"},
+        {"title": "☁️ API", "value": "HubSoft", "color": "#E0F0FF"},
+        {"title": "🗄️ Base", "value": "Produção", "color": "#FFF4E0"},
+        {"title": "🕒 Última Sync", "value": "Agora", "color": "#FFE0E0"},
+    ]
 
-    col1.metric("🔌 Status", "Conectado")
-    col2.metric("☁️ API", "HubSoft")
-    col3.metric("🗄️ Base", "Produção")
-    col4.metric("🕒 Última Sync", "Agora")
+    cols = st.columns(4)
+    for i, card in enumerate(status_cards):
+        cols[i].markdown(
+            f"""
+            <div style="
+                background:{card['color']};
+                border-radius:10px;
+                padding:20px;
+                text-align:center;
+                font-weight:bold;
+                font-size:18px;
+            ">
+                <div>{card['title']}</div>
+                <div style="font-size:24px;margin-top:5px;">{card['value']}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     st.write("")
 
     # ===============================
-    # MENU DE ACESSO RÁPIDO
+    # MENU DE ACESSO RÁPIDO COMO CARDS
     # ===============================
     st.markdown("### 🚀 Acesso Rápido")
+    menu_items = [
+        {"label": "👤 Usuários", "page": "Usuários", "color": "#4B8BBE"},
+        {"label": "🛠️ Ordens de Serviço", "page": "Ordens de Serviço", "color": "#FF8C42"},
+        {"label": "📈 Relatórios", "page": "Relatórios", "color": "#42B883"},
+    ]
 
-    a, b, c = st.columns(3)
-
-    with a:
-        if st.button("👤 Usuários", use_container_width=True):
-            st.session_state.pagina = "Usuários"
-
-    with b:
-        if st.button("🛠️ Ordens de Serviço", use_container_width=True):
-            st.session_state.pagina = "Ordens de Serviço"
-
-    with c:
-        if st.button("📈 Relatórios", use_container_width=True):
-            st.session_state.pagina = "Relatórios"
-
-
+    cols = st.columns(3)
+    for i, item in enumerate(menu_items):
+        if cols[i].button(item["label"], use_container_width=True):
+            st.session_state.pagina = item["page"]
 
     st.markdown("---")
 
