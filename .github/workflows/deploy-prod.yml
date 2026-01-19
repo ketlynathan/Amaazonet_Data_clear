@@ -1,0 +1,20 @@
+name: Deploy Streamlit PROD
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t streamlit-app:v1.0.${{ github.run_number }} .
+
+      - name: Deploy
+        run: |
+          docker compose down
+          docker compose up -d
