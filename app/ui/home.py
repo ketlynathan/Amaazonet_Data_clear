@@ -1,115 +1,98 @@
 import streamlit as st
 from pathlib import Path
 
+
 def render_home():
 
-    # ===============================
-    # HEADER COM LOGOS
-    # ===============================
-    col_logo1, col_title, col_logo2 = st.columns([1, 3, 1])
+    # ======================================================
+    # HEADER
+    # ======================================================
+    col_logo1, col_title, col_logo2 = st.columns([2, 4, 2])
 
     with col_logo1:
         if Path("app/img/amazonet.png").exists():
-            st.image("app/img/amazonet.png", width=120)
+            st.image("app/img/amazonet.png", width=130)
 
     with col_title:
-        cols = st.columns([1, 6])
-        if Path("app/img/hub.png").exists():
-            cols[0].image("app/img/hub.png", width=60)
+        cols = st.columns([0.4, 7.6])
 
-        cols[1].markdown(
-            """
-            <div style="text-align:center;">
-                <h1 style="margin-bottom:5px;color:#4B8BBE;">HubSoft Analytics</h1>
-                <p style="font-size:16px;color:#666;">Plataforma corporativa de gestão, auditoria e relatórios</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        with cols[0]:
+            st.write("") 
+            st.write("") 
+            st.image("app/img/hub.png", width=50)
+
+        with cols[1]:
+            st.markdown(
+                """
+                <div style="text-align:left;">
+                    <h1 style="margin-bottom:4px;">HubSoft Analytics</h1>
+                    <p style="font-size:15px;opacity:0.7;">
+                        Plataforma corporativa de gestão, auditoria e relatórios
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
 
     with col_logo2:
         if Path("app/img/mania.png").exists():
-            st.image("app/img/mania.png", width=120)
+            st.image("app/img/mania.png", width=130)
 
-    st.markdown("---")
+    st.divider()
 
-    # ===============================
-    # FRASE INSTITUCIONAL
-    # ===============================
-    st.markdown(
-        """
-        <div style="
-            background:#f2f2f2;
-            padding:20px;
-            border-radius:10px;
-            text-align:center;
-            font-size:16px;
-            font-weight:600;
-        ">
-            Central de dados, indicadores e automações operacionais do Grupo AMZ
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+   # ======================================================
+    # FRASE INSTITUCIONAL (CENTRALIZADA DE VERDADE)
+    # ======================================================
+    col_left, col_center, col_right = st.columns([2, 6, 2])
 
-    st.write("")
-
-    # ===============================
-    # CARDS DE STATUS CUSTOMIZADOS
-    # ===============================
-    status_cards = [
-        {"title": "🔌 Status", "value": "Conectado", "color": "#DFF6DD"},
-        {"title": "☁️ API", "value": "HubSoft", "color": "#E0F0FF"},
-        {"title": "🗄️ Base", "value": "Produção", "color": "#FFF4E0"},
-        {"title": "🕒 Última Sync", "value": "Agora", "color": "#FFE0E0"},
-    ]
-
-    cols = st.columns(4)
-    for i, card in enumerate(status_cards):
-        cols[i].markdown(
-            f"""
-            <div style="
-                background:{card['color']};
-                border-radius:10px;
-                padding:20px;
-                text-align:center;
-                font-weight:bold;
-                font-size:18px;
-            ">
-                <div>{card['title']}</div>
-                <div style="font-size:24px;margin-top:5px;">{card['value']}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+    with col_center:
+        st.info(
+            "Central de dados, indicadores e automações operacionais do Grupo AMZ",
+            icon="📊",
         )
 
-    st.write("")
+    # ======================================================
+    # STATUS GERAL (SAFE PARA DARK MODE)
+    # ======================================================
+    st.subheader("🔌 Status do Sistema")
 
-    # ===============================
-    # MENU DE ACESSO RÁPIDO COMO CARDS
-    # ===============================
-    st.markdown("### 🚀 Acesso Rápido")
-    menu_items = [
-        {"label": "👤 Usuários", "page": "Usuários", "color": "#4B8BBE"},
-        {"label": "🛠️ Ordens de Serviço", "page": "Ordens de Serviço", "color": "#FF8C42"},
-        {"label": "📈 Relatórios", "page": "Relatórios", "color": "#42B883"},
-    ]
+    c1, c2, c3, c4 = st.columns(4)
 
-    cols = st.columns(3)
-    for i, item in enumerate(menu_items):
-        if cols[i].button(item["label"], use_container_width=True):
-            st.session_state.pagina = item["page"]
+    c1.metric("Status", "Conectado")
+    c2.metric("API", "HubSoft")
+    c3.metric("Base", "Produção")
+    c4.metric("Última Sync", "Agora")
 
-    st.markdown("---")
+    # ======================================================
+    # ACESSO RÁPIDO
+    # ======================================================
+    st.subheader("🚀 Acesso Rápido")
 
-    # ===============================
+    a, b, c = st.columns(3)
+
+    with a:
+        if st.button("👤 Usuários", use_container_width=True):
+            st.session_state.pagina = "Usuários"
+
+    with b:
+        if st.button("🛠️ Ordens de Serviço", use_container_width=True):
+            st.session_state.pagina = "Ordens de Serviço"
+
+    with c:
+        if st.button("📈 Relatórios", use_container_width=True):
+            st.session_state.pagina = "Relatórios"
+
+    st.divider()
+
+    # ======================================================
     # RODAPÉ
-    # ===============================
+    # ======================================================
+    st.divider()
     st.markdown(
-        """
-        <div style="text-align:center;color:#999;font-size:12px;">
-            HubSoft Analytics © 2026 — Amazonet & Mania Telecom
-        </div>
-        """,
-        unsafe_allow_html=True
+        "<div style='text-align:center; font-size:12px; opacity:0.6;'>"
+        "HubSoft Analytics © 2026 — Amazonet & Mania Telecom<br>"
+        "Desenvolvimento: Ketlyn Athan"
+        "</div>",
+        unsafe_allow_html=True,
     )
