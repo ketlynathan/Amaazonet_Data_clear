@@ -1,13 +1,16 @@
-# app/ui/relatorio_planilha_app.py
 import streamlit as st
 import pandas as pd
+from datetime import date, timedelta
 
-from app.analysis.google_sheets import read_sheet_as_dataframe
+from app.analysis.relatorios.planilha_60 import read_sheet_as_dataframe
 
 
 def render_planilha():
-    st.title("📊 Relatório – Planilha Google")
+    st.title("📊 Relatório – Planilha Autônomos 60")
 
+    # =========================
+    # CARREGA DADOS
+    # =========================
     with st.spinner("Carregando dados da planilha..."):
         df = read_sheet_as_dataframe()
 
@@ -15,17 +18,91 @@ def render_planilha():
         st.warning("A planilha não retornou dados.")
         return
 
-    # --- Filtros dinâmicos (opcional, mas poderoso)
-    with st.expander("🔍 Filtros", expanded=False):
-        columns = df.columns.tolist()
-        selected_columns = st.multiselect(
-            "Selecione colunas para exibição",
-            options=columns,
-            default=columns,
+    # =========================
+    # NORMALIZA COLUNAS (leve)
+    # =========================
+    # NÃO renomeia, apenas garante string
+    for col in df.columns:
+        if df[col].dtype == "object":
+            df[col] = df[col].astype(str).str.strip()
+
+    # =========================
+    # CONVERSÃO DE DATA
+    # =========================
+    if "DATA DE FECHAMENTO" in df.columns:
+        df["DATA DE FECHAMENTO"] = pd.to_datetime(
+            df["DATA DE FECHAMENTO"],
+            errors="coerce",
+            dayfirst=True
+        ).dt.date
+
+    # =========================
+    # SIDEBAR – FILTROS
+    # =========================
+    with st.sidebar:
+        st.subheader("🔎 Filtros")
+
+        hoje = date.today()
+
+        data_inicio = st.date_input(
+            "📅 Data início (Fechamento)",
+            value=hoje - timedelta(days=7),
         )
 
-    df_view = df[selected_columns] if selected_columns else df
+        data_fim = st.date_input(
+            "📅 Data fim (Fechamento)",
+            value=hoje,
+        )
 
-    st.dataframe(df_view, use_container_width=True)
+        empresa = st.multiselect(
+            "🏢 Empresa",
+            options=sorted(df["MANIA TELECOM"].dropna().unique())
+            if "MANIA TELECOM" in df.columns else [],
+        )
 
-    st.caption(f"{len(df_view)} registros carregados")
+        tipo_venda = st.multiselect(
+            "🛒 Tipo de Venda",
+            options=sorted(df["A VENDA É DE UM:"].dropna().unique())
+            if "A VENDA É DE UM:" in df.columns else [],
+        )
+
+        status_venda = st.multiselect(
+            "📋 Status da Venda",
+            options=sorted(df["AVALIAÇÃO CQ -> VENDAS"].dropna().unique())
+            if "AVALIAÇÃO CQ -> VENDAS" in df.columns else [],
+        )
+
+        estado = st.multiselect(
+            "📍 Estado",
+            options=sorted(df["MINHA VENDA É PARA:"].dropna().unique())
+            if "MINHA VENDA É PARA:" in df.columns else [],
+        )
+
+    # =========================
+    # APLICA FILTROS
+    # =========================
+    df_f = df.copy()
+
+    if "DATA DE FECHAMENTO" in df_f.columns:
+        df_f = df_f[
+            (df_f["DATA DE FECHAMENTO"] >= data_inicio)
+            & (df_f["DATA DE FECHAMENTO"] <= data_fim)
+        ]
+
+    if empresa:
+        df_f = df_f[df_f["MANIA TELECOM"].isin(empresa)]
+
+    if tipo_venda:
+        df_f = df_f[df_f["A VENDA É DE UM:"].isin(tipo_venda)]
+
+    if status_venda:
+        df_f = df_f[df_f["AVALIAÇÃO CQ -> VENDAS"].isin(status_venda)]
+
+    if estado:
+        df_f = df_f[df_f["MINHA VENDA É PARA:"].isin(estado)]
+
+    # =========================
+    # VISUALIZAÇÃO
+    # =========================
+    st.dataframe(df_f, use_container_width=True)
+    st.caption(f"🔢 {len(df_f)} registros filtrados")
