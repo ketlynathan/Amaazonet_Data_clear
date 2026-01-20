@@ -1,6 +1,8 @@
 import streamlit as st
-from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
 from app.ui.components.navigation import botao_voltar_home
+
+from app.ui.fechamento_tecnicos_app import render as render
+from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
 
 def render_relatorios():
     # Botão de voltar Home
@@ -12,7 +14,7 @@ def render_relatorios():
         unsafe_allow_html=True
     )
 
-    # Tabs para Semanal x Mensal
+    # Tabs Semanal x Mensal
     tabs = st.tabs(["📆 Fechamento Semanal", "📅 Fechamento Mensal"])
 
     # ===============================
@@ -49,6 +51,26 @@ def render_relatorios():
         # ===============================
         # RENDERIZA SUBTELAS
         # ===============================
-        if st.session_state.get("relatorio_subtela") == "tecnico":
-            with st.spinner("Carregando Fechamento Técnico..."):
-                render_fechamento_metabase()
+        subtela = st.session_state.get("relatorio_subtela")
+        
+        # Aqui é o clique no card "Fechamento Técnico"
+        if subtela == "tecnico":
+            st.markdown("### Escolha o tipo de Fechamento Técnico:")
+            tecnico_cols = st.columns(2, gap="medium")
+            
+            with tecnico_cols[0]:
+                if st.button("📋 Fechamento Técnico (Hubsoft)", use_container_width=True):
+                    st.session_state["tecnico_tipo"] = "local"
+            
+            with tecnico_cols[1]:
+                if st.button("📋 Fechamento Técnico (Metabase)", use_container_width=True):
+                    st.session_state["tecnico_tipo"] = "metabase"
+            
+            # Renderiza o relatório escolhido
+            tecnico_tipo = st.session_state.get("tecnico_tipo")
+            if tecnico_tipo == "local":
+                with st.spinner("Carregando Fechamento Técnico Local..."):
+                    render()
+            elif tecnico_tipo == "metabase":
+                with st.spinner("Carregando Fechamento Técnico Metabase..."):
+                    render_fechamento_metabase()
