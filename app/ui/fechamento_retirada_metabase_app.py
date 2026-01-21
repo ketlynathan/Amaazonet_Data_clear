@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 
-import app
-from app.analysis.metabase_service import carregar_fechamento_metabase
+from app.analysis.relatorios.fechamento_retirada import relatorio_fechamento_retirada_df
 from app.ui.relatorio_financeiro_instalacoes_app import render_relatorio_financeiro_instalacoes
-
 
 # ======================================================
 # COLUNAS REAIS (JSON CONFIRMADO)
@@ -17,20 +15,13 @@ COL_DATA_FIM = "data_termino_executado"
 
 TIPOS_OS_FECHAMENTO_POR_CONTA = {
     "amazonet": [
-        "AMZ QUALIDADE - NÃO CONFORMIDADES",
-        "MUDANÇA DE ENDEREÇO - R$50,00",
-        "MUDANÇA DE ENDEREÇO",
-        "INSTALAÇÃO (R$ 100,00)",
-        "INSTALAÇÃO (R$ 49,90)",
-        "INSTALAÇÃO GRÁTIS",
+        "RETIRADA DE EQUIPAMENTOS",
+        
     ],
     "mania": [
-        "INSTALAÇÃO (R$ 20,00)",
-        "MANIA QUALIDADE - NÃO CONFORMIDADES",
-        "MUDANÇA DE ENDEREÇO",
-        "INSTALAÇÃO WI-FI+ (R$ 20,00)",
-        "INSTALAÇÃO (R$ 100,00)",
+        "RETIRADA DE EQUIPAMENTOS",
     ],
+        
 }
 
 # ======================================================
@@ -53,7 +44,7 @@ def carregar_base(contas, data_inicio, data_fim):
 # ======================================================
 # APP
 # ======================================================
-def render_fechamento_metabase():
+def render_retirada_metabase():
     st.title("📋 Fechamento Técnico – Metabase")
 
     # =========================

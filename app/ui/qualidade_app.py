@@ -22,7 +22,7 @@ STATUS_MONITORADOS = [
 # ======================================================
 def render_qualidade():
     botao_voltar_home()
-    st.title("🛠 Ordens de Serviço – HubSoft")
+    st.title("Análise de Qualidade")
 
     # ======================================================
     # SESSION STATE (ANTI-QUEBRA)
@@ -54,6 +54,7 @@ def render_qualidade():
             hoje,
         )
 
+
         carregar = st.button("📥 Carregar ordens")
 
     # ======================================================
@@ -84,10 +85,7 @@ def render_qualidade():
 
         df = pd.concat(dfs, ignore_index=True)
 
-        # garante colunas críticas
-        for col in [COL_STATUS, COL_TECNICO, COL_ESTADO]:
-            if col not in df.columns:
-                df[col] = None
+
 
         st.session_state["df_os"] = df
         st.session_state["carregado"] = True
@@ -98,7 +96,12 @@ def render_qualidade():
     if not st.session_state["carregado"]:
         st.info("Selecione os filtros e clique em **📥 Carregar ordens**")
         return
+    
 
     df_base = st.session_state["df_os"]
+    st.success(f"✅ {len(df_base)} ordens carregadas.")
+    st.dataframe(df_base)
+    
+
 
     
