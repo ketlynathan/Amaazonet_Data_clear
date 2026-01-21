@@ -2,6 +2,14 @@ import streamlit as st
 from pathlib import Path
 
 
+# ======================================================
+# RESOLUÇÃO ROBUSTA DE CAMINHO (LOCAL + DOCKER)
+# ======================================================
+# home.py -> /app/app/ui/home.py
+BASE_DIR = Path(__file__).resolve().parents[1]  # /app/app
+IMG_DIR = BASE_DIR / "img"
+
+
 def render_home():
 
     # ======================================================
@@ -10,16 +18,21 @@ def render_home():
     col_logo1, col_title, col_logo2 = st.columns([2, 4, 2])
 
     with col_logo1:
-        if Path("app/img/amazonet.png").exists():
-            st.image("app/img/amazonet.png", width=130)
+        amazonet_img = IMG_DIR / "amazonet.png"
+        if amazonet_img.exists():
+            st.image(str(amazonet_img), width=130)
 
     with col_title:
         cols = st.columns([0.4, 7.6])
 
         with cols[0]:
-            st.write("") 
-            st.write("") 
-            st.image("app/img/hub.png", width=50)
+            st.write("")
+            st.write("")
+            hub_img = IMG_DIR / "hub.png"
+            if hub_img.exists():
+                st.image(str(hub_img), width=50)
+            else:
+                st.warning("Imagem hub.png não encontrada")
 
         with cols[1]:
             st.markdown(
@@ -34,14 +47,14 @@ def render_home():
                 unsafe_allow_html=True,
             )
 
-
     with col_logo2:
-        if Path("app/img/mania.png").exists():
-            st.image("app/img/mania.png", width=130)
+        mania_img = IMG_DIR / "mania.png"
+        if mania_img.exists():
+            st.image(str(mania_img), width=130)
 
     st.divider()
 
-   # ======================================================
+    # ======================================================
     # FRASE INSTITUCIONAL (CENTRALIZADA DE VERDADE)
     # ======================================================
     col_left, col_center, col_right = st.columns([2, 6, 2])
@@ -88,7 +101,6 @@ def render_home():
     # ======================================================
     # RODAPÉ
     # ======================================================
-    st.divider()
     st.markdown(
         "<div style='text-align:center; font-size:12px; opacity:0.6;'>"
         "HubSoft Analytics © 2026 — Amazonet & Mania Telecom<br>"
