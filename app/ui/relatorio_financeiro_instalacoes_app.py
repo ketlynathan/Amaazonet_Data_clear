@@ -69,7 +69,7 @@ def render_relatorio_financeiro_instalacoes():
         st.warning("Sem data válida de término.")
         return
 
-    data_inicio = data_fim - timedelta(days=5)
+    data_inicio = data_fim - timedelta(days=6)
     data_pagamento = data_fim + timedelta(days=1)
 
     # ======================================================
