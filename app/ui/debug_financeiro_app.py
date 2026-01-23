@@ -107,7 +107,7 @@ def render_debug_sheets():
             st.error(f"Erro ao recortar colunas da 60: {e}")
         
     read_sheet_as_dataframe("51_STM")
-        # ======================================================
+    # ======================================================
     # 4️⃣ Planilha 51_STM — Auditoria Complementar
     # ======================================================
     st.subheader("📄 Planilha 51_STM (Auditoria Complementar)")
@@ -148,5 +148,44 @@ def render_debug_sheets():
 
         except Exception as e:
             st.error(f"Erro ao recortar colunas da 51_STM: {e}")
+
+    # ======================================================
+    # 4️⃣ Planilha 39 — Agendamento e Financeiro
+    # ======================================================
+    st.subheader("📄 Planilha 39 (Agendamento e Financeiro)")
+
+    with st.spinner("Lendo planilha 39..."):
+        sheet_39 = read_sheet_as_dataframe("39")
+
+    if sheet_39.empty:
+        st.error("Planilha 39 vazia.")
+    else:
+        st.write("Colunas reais da 39:")
+        st.write({i: c for i, c in enumerate(sheet_39.columns)})
+        st.dataframe(sheet_39.head(300), use_container_width=True)
+
+        try:
+            # D = 3 | E = 4
+            if sheet_39.shape[1] < 5:
+                st.error("A Planilha 39 não possui colunas suficientes (esperado D e E).")
+                return
+
+            df39_debug = sheet_39.iloc[:, [3, 4]].copy()
+            df39_debug.columns = [
+                "codigo_cliente",
+                "codigo_os",
+            ]
+
+            for c in df39_debug.columns:
+                df39_debug[c] = df39_debug[c].astype(str).str.strip()
+
+            st.subheader("🎯 Dados usados da Planilha 39")
+            st.dataframe(df39_debug.head(300), use_container_width=True)
+
+            st.subheader("📊 Quantidade de registros válidos (39)")
+            st.write(f"Total linhas com cliente/OS: {len(df39_debug)}")
+
+        except Exception as e:
+            st.error(f"Erro ao recortar colunas da 39: {e}")
 
 

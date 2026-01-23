@@ -23,6 +23,8 @@ TIPOS_OS_FECHAMENTO_POR_CONTA = {
         "INSTALAÇÃO (R$ 100,00)",
         "INSTALAÇÃO (R$ 49,90)",
         "INSTALAÇÃO GRÁTIS",
+        "MUDANÇA DE ENDEREÇO - R$ 50,00 - VALOR OBRIGATÓRIO: R$ 50.00",
+        "MUDANÇA DE ENDEREÇO - R$ 50,00",
     ],
     "mania": [
         "INSTALAÇÃO (R$ 20,00)",
@@ -221,6 +223,5 @@ def render_fechamento_metabase():
 
     if not df_final.empty:
         st.markdown("---")
-        st.header("💰 Relatório Financeiro")
         render_relatorio_financeiro_instalacoes()
 

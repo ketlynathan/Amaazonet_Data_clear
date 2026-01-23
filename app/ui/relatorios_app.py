@@ -61,22 +61,22 @@ def render_relatorios():
             cols = st.columns(2, gap="medium")
 
             with cols[0]:
-                if st.button("Hubsoft", use_container_width=True):
+                if st.button("Metabase", use_container_width=True):
                     st.session_state["tecnico_tipo"] = "local"
 
             with cols[1]:
-                if st.button("Metabase", use_container_width=True):
+                if st.button("Hubsoft", use_container_width=True):
                     st.session_state["tecnico_tipo"] = "metabase"
 
             tecnico_tipo = st.session_state.get("tecnico_tipo")
 
-            if tecnico_tipo == "local":
-                with st.spinner("Carregando Fechamento Técnico (Hubsoft)..."):
-                    render()
-
-            elif tecnico_tipo == "metabase":
+            if tecnico_tipo == "metabase":
                 with st.spinner("Carregando Fechamento Técnico (Metabase)..."):
                     render_fechamento_metabase()
+
+            elif tecnico_tipo == "local":
+                with st.spinner("Carregando Fechamento Técnico (Hubsoft)..."):
+                    render()
 
         # ======================================================
         # FECHAMENTO RETIRADA
@@ -86,19 +86,18 @@ def render_relatorios():
             cols = st.columns(2, gap="medium")
 
             with cols[0]:
-                if st.button("Hubsoft", use_container_width=True):
-                    st.session_state["retirada_tipo"] = "local"
-
-            with cols[1]:
                 if st.button("Metabase", use_container_width=True):
                     st.session_state["retirada_tipo"] = "metabase"
 
+            with cols[1]:
+                if st.button("Hubsoft", use_container_width=True):
+                    st.session_state["retirada_tipo"] = "local"
             retirada_tipo = st.session_state.get("retirada_tipo")
 
             if retirada_tipo == "local":
-                with st.spinner("Carregando Fechamento Retirada (Hubsoft)..."):
-                    render_retirada()
-
-            elif retirada_tipo == "metabase":
                 with st.spinner("Carregando Fechamento Retirada (Metabase)..."):
                     render_retirada_metabase()
+
+            elif retirada_tipo == "metabase":
+                with st.spinner("Carregando Fechamento Retirada (Hubsoft)..."):
+                    render_retirada()

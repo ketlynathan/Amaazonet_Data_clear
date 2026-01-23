@@ -26,6 +26,7 @@ st.set_page_config(
     layout="wide",
 )
 
+
 # Inicializa estado
 if "pagina" not in st.session_state:
     st.session_state.pagina = "Home"
@@ -33,32 +34,41 @@ if "pagina" not in st.session_state:
 # ======================================================
 # SIDEBAR
 # ======================================================
-st.sidebar.title("📊 HubSoft Analytics")
+with st.sidebar:
 
-# Seções (opcional, para melhor UX)
-st.sidebar.markdown("### Navegação")
-opcoes = [
-    "Home",
-    "Usuários",
-    "Ordens de Serviço",
-    "Relatórios",
-    "Planilha Google",
-    "Debug Financeiro",
-    "Qualidade",
-]
+    # Wrapper do conteúdo
+    st.markdown("<div class='sidebar-content'>", unsafe_allow_html=True)
 
-pagina = st.sidebar.radio(
-    "Selecione a página",
-    opcoes,
-    index=opcoes.index(st.session_state.pagina)
-)
-st.session_state.pagina = pagina
+    st.title("📊 HubSoft Analytics")
+    st.markdown("### Navegação")
+    st.caption("Selecione a página")
 
-# Botão de voltar para Home
-if st.session_state.pagina != "Home":
-    if st.sidebar.button("⬅ Voltar para Home"):
-        st.session_state.pagina = "Home"
-        st.experimental_rerun()
+    opcoes = [
+        "Home",
+        "Usuários",
+        "Ordens de Serviço",
+        "Relatórios",
+        "Planilha Google",
+        "Debug Financeiro",
+        "Qualidade",
+    ]
+
+    pagina = st.radio(
+        "",
+        opcoes,
+        index=opcoes.index(st.session_state.pagina),
+        label_visibility="collapsed",
+    )
+    st.session_state.pagina = pagina
+
+    if st.session_state.pagina != "Home":
+        if st.button("⬅ Voltar para Home", key="btn_voltar_home_sidebar"):
+            st.session_state.pagina = "Home"
+            st.experimental_rerun()
+
+    
+
+
 
 # ======================================================
 # ROTEAMENTO DAS PÁGINAS

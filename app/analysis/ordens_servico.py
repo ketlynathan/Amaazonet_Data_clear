@@ -26,7 +26,7 @@ def carregar_ordens_servico_df(
     todas_ordens: list[dict] = []
 
     # ======================================================
-    # PAGINAÇÃO
+    # PAGINAÇÃO (CORRIGIDA)
     # ======================================================
     while pagina <= max_paginas:
         payload = {
@@ -40,7 +40,6 @@ def carregar_ordens_servico_df(
         # -------------------------
         # FILTROS OPCIONAIS
         # -------------------------
-
         if tecnico:
             payload["usuario_fechamento.nome"] = tecnico
 
@@ -52,6 +51,7 @@ def carregar_ordens_servico_df(
             params=payload,
         )
 
+        # Se a API não respondeu corretamente, encerra
         if not isinstance(response, dict):
             break
 
@@ -62,10 +62,17 @@ def carregar_ordens_servico_df(
             or []
         )
 
+        # Se não veio lista ou veio vazia, acabou
         if not isinstance(ordens, list) or not ordens:
             break
 
         todas_ordens.extend(ordens)
+
+        # 🔐 Se veio menos registros que o limite, não há próxima página
+        if len(ordens) < itens_por_pagina:
+            break
+
+        # ✅ Incremento correto da página
         pagina += 1
 
     # ======================================================

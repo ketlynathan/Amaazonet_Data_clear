@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import timedelta
 from pathlib import Path
-from app.analysis.financeiro_rules import aplicar_regras_financeiras
-from app.analysis.pdf_relatorio import montar_tabela
-from app.analysis.pdf_recibo import gerar_recibo_pagamento
+from app.analysis.Financeiro.financeiro_rules_instalacao import aplicar_regras_financeiras
+from app.analysis.pdf.pdf_relatorio import montar_tabela
+from app.analysis.pdf.pdf_recibo import gerar_recibo_pagamento
 
 def render_relatorio_financeiro_instalacoes():
     st.markdown("## 🧾 Resumo Financeiro – Instalações")
@@ -185,7 +185,7 @@ def render_relatorio_financeiro_instalacoes():
     with col1:
         cols = st.columns([1, 5])
         if logo_path and Path(logo_path).exists():
-            cols[0].image(logo_path, width=150)
+            cols[0].image(logo_path, width=130)
         cols[1].markdown(
             "<div style='text-align:center;font-size:28px;font-weight:700;'>Resumo Instalações</div>",
             unsafe_allow_html=True

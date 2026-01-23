@@ -4,7 +4,8 @@ from datetime import date, timedelta
 
 
 from app.analysis.relatorios.fechamento_retirada import relatorio_fechamento_retirada_df
-from app.ui.relatorio_financeiro_retirada_app import render_relatorio_financeiro_retirada                  
+from app.ui.relatorio_financeiro_retirada_app import render_relatorio_financeiro_retirada   
+from app.analysis.google_sheets import read_sheet_as_dataframe               
 # ======================================================
 # CONSTANTES
 # ======================================================
@@ -255,6 +256,32 @@ def render_retirada():
         return
 
     st.session_state["df_fechamento_filtrado"] = df_fin
+
+    # ======================================================
+# 🔗 PUXA DATA PLAN DA PLANILHA (COLUNA 2 / INDEX 1)
+# ======================================================
+    try:
+        sheet_apoio = read_sheet_as_dataframe("39")  # ou a sheet correta
+
+        if sheet_apoio.shape[1] > 1:
+            data_plan = (
+                sheet_apoio.iloc[1:, 1]  # começa da linha 2, coluna índice 1
+                .reset_index(drop=True)
+            )
+
+            df_fin = df_fin.reset_index(drop=True)
+
+            # Garante mesmo tamanho
+            tamanho_min = min(len(df_fin), len(data_plan))
+            df_fin = df_fin.iloc[:tamanho_min].copy()
+            df_fin["data Plan"] = data_plan.iloc[:tamanho_min]
+
+        else:
+            st.warning("Planilha não possui coluna índice 1 para 'data Plan'.")
+
+    except Exception as e:
+        st.error(f"Erro ao carregar 'data Plan' da planilha: {e}")
+
 
     # ======================================================
     # FINANCEIRO

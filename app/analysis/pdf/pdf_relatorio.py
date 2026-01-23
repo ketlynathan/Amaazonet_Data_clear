@@ -4,34 +4,19 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.colors import black
 import os
 import re
+from app.utils.formatacao import limpar_nome_tecnico
 
 
 
-def limpar_nome_tecnico(nome):
-    if not nome:
-        return ""
 
-    nome = str(nome)
 
-    # Remove padrões técnicos
-    remover = [
-        "_TEC_TERC_MAO",
-        "_TEC",
-        "TEC_",
-    ]
 
-    for r in remover:
-        nome = nome.replace(r, "")
 
-    # Casos especiais
-    if "LOBATOS" in nome.upper():
-        return "Leidinaldo Lobato da Fonseca"
 
-    # Normaliza
-    nome = nome.replace("_", " ").strip()
-    return nome.title()
+
 
 
 
@@ -44,7 +29,9 @@ def formatar_brl(valor):
 
 def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, total_valor, logo_path=None):
 
-    caminho_pdf = f"Resumo_{tecnico.replace(' ', '_')}.pdf"
+    tecnico = limpar_nome_tecnico(tecnico)
+    nome_limpo = limpar_nome_tecnico(tecnico)
+    caminho_pdf = f"Resumo_{nome_limpo.replace(' ', '_')}.pdf"
 
     doc = SimpleDocTemplate(
         caminho_pdf,
@@ -82,30 +69,43 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
     # =========================
     # TOPO
     # =========================
-    logo = Image(logo_path, width=4*cm, height=4*cm) if logo_path and os.path.exists(logo_path) else ""
+    logo = Image(logo_path, width=4.2*cm, height=3.5*cm) if logo_path and os.path.exists(logo_path) else ""
 
     titulo = Paragraph(
         "RESUMO INSTALAÇÕES",
         ParagraphStyle(
             "Titulo",
             parent=styles["Normal"],
-            fontSize=14,
+            fontSize=20,
             fontName="Helvetica-Bold",
             textColor=cor_empresa,
             alignment=TA_CENTER
         )
     )
     
-
-    tabela_topo = Table([[logo, titulo]], colWidths=[5*cm, 7*cm])
+    tabela_topo = Table(
+    [[logo, titulo, ""]],
+    colWidths=[4.5*cm, 9*cm, 4.5*cm]  # esquerda | centro | direita (espelho)
+)
+    #tabela_topo = Table([[logo, titulo]], colWidths=[5*cm, 10*cm])
 
     tabela_topo.setStyle(TableStyle([
-        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        ("ALIGN", (0,0), (0,0), "LEFT"),
-        ("ALIGN", (1,0), (1,0), "CENTER"),
-        ("ALIGN", (2,0), (2,0), "RIGHT"),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
-    ]))
+    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+
+    ("ALIGN", (0,0), (0,0), "LEFT"),
+    ("ALIGN", (1,0), (1,0), "CENTER"),
+    ("ALIGN", (2,0), (2,0), "RIGHT"),
+
+    # 👇 DESCE SOMENTE A LOGO
+    ("TOPPADDING", (0,0), (0,0), 15),
+
+    # Mantém o resto normal
+    ("TOPPADDING", (1,0), (2,0), 0),
+    ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+
+    ("BOX", (0,0), (-1,-1), 0, colors.white),
+    ("GRID", (0,0), (-1,-1), 0, colors.white),
+]))
 
     elementos.append(tabela_topo)
     elementos.append(Spacer(1, 0.3*cm))
@@ -119,49 +119,73 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
     # ===============================
     # BLOCO TÉCNICO | PERÍODO | TOTAL | DATA PAGAMENTO
     # ===============================
+    estilo_label = ParagraphStyle(
+        "Label",
+        parent=styles["Normal"],
+        fontSize=11,
+        textColor=black,
+        spaceAfter=2,
+    )
+
+    estilo_valor = ParagraphStyle(
+        "Valor",
+        parent=styles["Normal"],
+        fontSize=11,
+    )
+
+    estilo_total = ParagraphStyle(
+        "Total",
+        parent=styles["Normal"],
+        fontSize=11,
+        fontName="Helvetica-Bold",
+        spaceBefore=6,
+    )
 
     bloco_info = Table(
+    [
         [
-            [
-                Paragraph(f"<b>Técnico:</b> {tecnico}", estilo_normal),
-                Paragraph(f"<b>Período:</b> {data_inicio:%d/%m} - {data_fim:%d/%m}", estilo_normal)
-            ],
-            [
-                Paragraph(f"<b>TOTAL A RECEBER:</b> R$ {formatar_brl(total_valor)}",
-                        ParagraphStyle(
-                            "TotalDestaque",
-                            parent=styles["Normal"],
-                            fontSize=12,
-                            fontName="Helvetica-Bold"
-                        )),
-                Paragraph(f"<b>Data de Pagamento:</b> {data_pg}", estilo_normal)
-            ]
+            Paragraph(f"Técnico: <b>{tecnico}</b>", estilo_valor),
+            Paragraph(
+                f"Período: <b>{data_inicio:%d/%m} – {data_fim:%d/%m}</b>",
+                estilo_valor
+            ),
         ],
-        colWidths=[11*cm, 7*cm]
-    )
+        [
+            Paragraph(
+                f"Total a receber: <b>R$ {formatar_brl(total_valor)}</b>",
+                estilo_valor
+            ),
+            Paragraph(
+                f"Pagamento: <b>{data_pg}</b>",
+                estilo_valor
+            ),
+        ],
+    ],
+    colWidths=[10*cm, 8.5*cm],
+)
+
 
     bloco_info.setStyle(TableStyle([
 
-        # GRID invisível
-        ("GRID", (0,0), (-1,-1), 0, colors.white),
+    # GRID invisível
+    ("GRID", (0,0), (-1,-1), 0, colors.white),
 
-        # Técnico
-        ("BACKGROUND", (0,0), (0,0), colors.HexColor("#f2f2f2")),
-        ("LEFTPADDING", (0,0), (-1,-1), 8),
-        ("TOPPADDING", (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+    # Fundos padronizados
+    ("BACKGROUND", (0,0), (0,0), colors.HexColor("#f2f2f2")),  # Técnico
+    ("BACKGROUND", (1,0), (1,0), colors.HexColor("#f2f2f2")),  # Período
+    ("BACKGROUND", (0,1), (0,1), colors.HexColor("#f2f2f2")),  # Total
+    ("BACKGROUND", (1,1), (1,1), colors.HexColor("#f2f2f2")),  # Pagamento
 
-        # Total a Receber (amarelo)
-        ("BACKGROUND", (0,1), (0,1), colors.HexColor("#ffe066")),
-        ("BOX", (0,1), (0,1), 1, cor_empresa),
+    # Espaçamento interno
+    ("LEFTPADDING", (0,0), (-1,-1), 8),
+    ("RIGHTPADDING", (0,0), (-1,-1), 8),
+    ("TOPPADDING", (0,0), (-1,-1), 8),
+    ("BOTTOMPADDING", (0,0), (-1,-1), 8),
 
-        # Data de pagamento (amarelo suave)
-        ("BACKGROUND", (1,1), (1,1), colors.HexColor("#fff3a0")),
-
-        # Alinhamento
-        ("ALIGN", (1,0), (1,0), "RIGHT"),   # período
-        ("ALIGN", (1,1), (1,1), "RIGHT"),   # data pagamento
-    ]))
+    # Alinhamentos
+    ("ALIGN", (1,0), (1,0), "RIGHT"),   # Período
+    ("ALIGN", (1,1), (1,1), "RIGHT"),   # Pagamento
+]))
 
     elementos.append(bloco_info)
     elementos.append(Spacer(1, 0.5*cm))
@@ -189,7 +213,7 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
         ])
 
     tabela = Table(data, repeatRows=1, colWidths=[
-        1*cm, 2*cm, 2.1*cm, 3.5*cm, 4*cm, 2.2*cm, 2.2*cm, 1.5*cm
+        0.8*cm, 2*cm, 1.8*cm, 3.5*cm, 4*cm, 2.5*cm, 2.2*cm, 1.5*cm
     ])
  
     tabela.setStyle(TableStyle([

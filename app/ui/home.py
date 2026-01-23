@@ -55,17 +55,6 @@ def render_home():
     st.divider()
 
     # ======================================================
-    # FRASE INSTITUCIONAL (CENTRALIZADA DE VERDADE)
-    # ======================================================
-    col_left, col_center, col_right = st.columns([2, 6, 2])
-
-    with col_center:
-        st.info(
-            "Central de dados, indicadores e automações operacionais do Grupo AMZ",
-            icon="📊",
-        )
-
-    # ======================================================
     # STATUS GERAL (SAFE PARA DARK MODE)
     # ======================================================
     st.subheader("🔌 Status do Sistema")
@@ -76,6 +65,9 @@ def render_home():
     c2.metric("API", "HubSoft")
     c3.metric("Base", "Produção")
     c4.metric("Última Sync", "Agora")
+
+
+    st.divider()
 
     # ======================================================
     # ACESSO RÁPIDO
@@ -99,12 +91,64 @@ def render_home():
     st.divider()
 
     # ======================================================
+    # UNIDADES OPERACIONAIS (COMPACTO + TOTAL)
+    # ======================================================
+    st.subheader("📍 Unidades Operacionais")
+
+    UNIDADES = {
+        "PA": [
+            "Santarém (STM)", "Alenquer (ALQ)", "Marabá (MAB)", "Prainha (PRH)",
+            "Monte Alegre (MAL)", "Óbidos (OBI)", "Oriximiná (ORX)", "Belterra (BEL)",
+            "Mojuí dos Campos (MDC)", "Itaituba (ITB)", "Curuá (CUR)",
+            "Uruará (URU)", "Alter do Chão (ADC)"
+        ],
+        "AM": [
+            "Manaus (MAO)", "Presidente Figueiredo (PFG)", "Manacapuru (MCP)",
+            "Rio Preto da Eva (RPE)", "Iranduba (IRD)",
+            "Parintins (PAR)", "Itacoatiara (ITA)"
+        ],
+    }
+
+    for uf, cidades in UNIDADES.items():
+        total = len(cidades)
+
+        st.markdown(f"#### 🗺️ {uf} <span style='opacity:0.6;'>({total} unidades)</span>",
+                    unsafe_allow_html=True)
+
+        cols = st.columns(6)
+
+        for i, cidade in enumerate(cidades):
+            with cols[i % 6]:
+                st.markdown(
+                    f"""
+                    <div style="
+                        border:1px solid rgba(255,255,255,0.08);
+                        border-radius:10px;
+                        padding:8px 6px;
+                        text-align:center;
+                        background:rgba(255,255,255,0.015);
+                        margin-bottom:6px;
+                    ">
+                        <div style="font-size:13px; font-weight:600;">
+                            {cidade}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        st.divider()
+    # ======================================================
     # RODAPÉ
     # ======================================================
     st.markdown(
-        "<div style='text-align:center; font-size:12px; opacity:0.6;'>"
-        "HubSoft Analytics © 2026 — Amazonet & Mania Telecom<br>"
-        "Desenvolvimento: Ketlyn Athan"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+            "<div style='text-align:center; font-size:12px; opacity:0.6;'>"
+            "HubSoft Analytics © 2026 — Amazonet & Mania Telecom<br>"
+            "Desenvolvimento: Ketlyn Athan"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    
+    
+
+

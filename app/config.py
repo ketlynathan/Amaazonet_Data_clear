@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from dotenv import load_dotenv
+from dataclasses import dataclass
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -49,7 +50,6 @@ def get_hubsoft_account_config(account: str) -> HubSoftAccountConfig:
 
 
 # === GOOGLE SHEETS CONFIG =======================================
-
 @dataclass
 class GoogleSheetsConfig:
     project_id: str
@@ -58,15 +58,20 @@ class GoogleSheetsConfig:
     client_email: str
     client_id: str
 
+    # IDs das planilhas
     spreadsheet_60: str
     spreadsheet_51: str
     spreadsheet_51_stm: str
-    spreadsheet_39: str 
+    spreadsheet_39: str
 
-    sheet_name: str
+    # Nomes das abas
+    sheet_name_60: str
+    sheet_name_51: str
+    sheet_name_51_stm: str
+    sheet_name_39: str
 
 
-def get_google_sheets_config():
+def get_google_sheets_config() -> GoogleSheetsConfig:
     return GoogleSheetsConfig(
         project_id=os.getenv("GOOGLE_PROJECT_ID"),
         private_key_id=os.getenv("GOOGLE_PRIVATE_KEY_ID"),
@@ -79,7 +84,10 @@ def get_google_sheets_config():
         spreadsheet_51_stm=os.getenv("GOOGLE_SHEET_ID_51_STM"),
         spreadsheet_39=os.getenv("GOOGLE_SHEET_ID_39"),
 
-
-        sheet_name=os.getenv("GOOGLE_SHEET_NAME"),
+        sheet_name_60=os.getenv("GOOGLE_SHEET_NAME"),
+        sheet_name_51=os.getenv("GOOGLE_SHEET_NAME"),
+        sheet_name_51_stm=os.getenv("GOOGLE_SHEET_NAME"),
+        sheet_name_39=os.getenv("GOOGLE_SHEET_NAME_39"),
     )
+
 
