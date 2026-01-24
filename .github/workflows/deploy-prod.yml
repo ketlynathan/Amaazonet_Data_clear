@@ -16,14 +16,27 @@ jobs:
       # 1️⃣ Clonar repositório
       - uses: actions/checkout@v4
 
-      # 2️⃣ Derrubar container e remover volumes (como vocês faziam manualmente)
+      # 2️⃣ Verificar se Docker está acessível
+      - name: Docker info
+        run: docker info
+        shell: powershell
+
+      # 3️⃣ Derrubar container antigo e remover volumes
       - name: Docker down (remove volumes)
         run: docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
+        shell: powershell
 
-      # 3️⃣ Build da imagem sem cache
+      # 4️⃣ Build da imagem sem cache
       - name: Build Docker image (no cache)
         run: docker compose -f docker-compose.prod.yml build --no-cache
+        shell: powershell
 
-      # 4️⃣ Subir container de novo
+      # 5️⃣ Subir container de novo
       - name: Deploy Docker container
         run: docker compose -f docker-compose.prod.yml up -d
+        shell: powershell
+
+      # 6️⃣ Listar containers para verificar se subiu
+      - name: Docker ps
+        run: docker ps
+        shell: powershell
