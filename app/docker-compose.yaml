@@ -1,11 +1,11 @@
 version: "3.9"
 
 services:
-  streamlit:
+  streamlit_app:
     build: .
     container_name: streamlit_app
+    restart: unless-stopped
     ports:
       - "8501:8501"
     env_file:
       - .env
-    restart: unless-stopped
