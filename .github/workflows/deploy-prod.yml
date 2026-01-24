@@ -16,7 +16,7 @@ jobs:
       # 1️⃣ Clonar repositório
       - uses: actions/checkout@v4
 
-      # 2️⃣ Verificar se Docker está acessível
+      # 2️⃣ Verificar Docker
       - name: Docker info
         run: docker info
         shell: powershell
@@ -36,7 +36,7 @@ jobs:
         run: docker compose -f docker-compose.prod.yml up -d
         shell: powershell
 
-      # 6️⃣ Listar containers para verificar se subiu
+      # 6️⃣ Verificar containers rodando
       - name: Docker ps
         run: docker ps
         shell: powershell
