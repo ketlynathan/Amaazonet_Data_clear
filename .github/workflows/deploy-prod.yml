@@ -13,15 +13,17 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # 1️⃣ Clonar o repositório
+      # 1️⃣ Clonar repositório
       - uses: actions/checkout@v4
 
-      # 2️⃣ Build da imagem Docker
-      - name: Build Docker image
-        run: docker build -t streamlit-app:${{ env.APP_VERSION }} .
+      # 2️⃣ Derrubar container e remover volumes (como vocês faziam manualmente)
+      - name: Docker down (remove volumes)
+        run: docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
 
-      # 3️⃣ Deploy do container
+      # 3️⃣ Build da imagem sem cache
+      - name: Build Docker image (no cache)
+        run: docker compose -f docker-compose.prod.yml build --no-cache
+
+      # 4️⃣ Subir container de novo
       - name: Deploy Docker container
-        run: |
-          docker compose -f docker-compose.prod.yml down
-          docker compose -f docker-compose.prod.yml up -d
+        run: docker compose -f docker-compose.prod.yml up -d
