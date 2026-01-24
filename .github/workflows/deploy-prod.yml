@@ -33,8 +33,7 @@ jobs:
 
       # 5️⃣ Subir container de novo
       - name: Deploy Docker container
-        run: run: docker compose -f C:\caminho\para\app\docker-compose.prod.yml up -d
-
+        run: docker compose -f docker-compose.prod.yml up -d
         shell: powershell
 
       # 6️⃣ Verificar containers rodando
