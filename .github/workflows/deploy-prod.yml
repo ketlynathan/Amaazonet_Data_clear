@@ -7,36 +7,38 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, Windows, X64, docker]
-
+    runs-on: self-hosted
 
     steps:
-      # 1️⃣ Clona o repositório na pasta correta do runner
       - uses: actions/checkout@v4
 
-      # 2️⃣ Só pra debug (pode remover depois)
-      - name: Ver onde estou
+      - name: Show current directory (debug)
         run: |
           pwd
           dir
         shell: powershell
 
-      # 3️⃣ Derruba containers antigos
+      - name: Create .env file
+        run: |
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+        shell: powershell
+
       - name: Docker down
         run: docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
         shell: powershell
 
-      # 4️⃣ Rebuild da imagem
       - name: Docker build
         run: docker compose -f docker-compose.prod.yml build --no-cache
         shell: powershell
 
-      # 5️⃣ Sobe container novo
       - name: Docker up
         run: docker compose -f docker-compose.prod.yml up -d
         shell: powershell
 
-      # 6️⃣ Verifica
       - name: Docker ps
         run: docker ps
         shell: powershell
