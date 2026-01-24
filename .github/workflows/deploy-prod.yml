@@ -7,7 +7,8 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Windows, X64, docker]
+
 
     steps:
       # 1️⃣ Clona o repositório na pasta correta do runner
