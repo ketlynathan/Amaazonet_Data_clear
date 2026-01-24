@@ -7,36 +7,35 @@ on:
 
 env:
   APP_VERSION: v1.0.${{ github.run_number }}
-
-jobs:
+  
+  jobs:
   deploy:
     runs-on: self-hosted
 
     steps:
-      # 1️⃣ Clonar repositório
       - uses: actions/checkout@v4
 
-      # 2️⃣ Verificar Docker
-      - name: Docker info
-        run: docker info
+      # Navega para o diretório clonado
+      - name: Set working directory
+        run: cd _work/Amaazonet_Data_clear/Amaazonet_Data_clear
         shell: powershell
 
-      # 3️⃣ Derrubar container antigo e remover volumes
+      # Docker down
       - name: Docker down (remove volumes)
-        run: docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
+        run: docker compose down --volumes --remove-orphans
         shell: powershell
 
-      # 4️⃣ Build da imagem sem cache
+      # Build da imagem
       - name: Build Docker image (no cache)
-        run: docker compose -f docker-compose.prod.yml build --no-cache
+        run: docker compose build --no-cache
         shell: powershell
 
-      # 5️⃣ Subir container de novo
+      # Deploy container
       - name: Deploy Docker container
-        run: docker compose -f docker-compose.prod.yml up -d
+        run: docker compose up -d
         shell: powershell
 
-      # 6️⃣ Verificar containers rodando
+      # Verifica containers
       - name: Docker ps
         run: docker ps
         shell: powershell
