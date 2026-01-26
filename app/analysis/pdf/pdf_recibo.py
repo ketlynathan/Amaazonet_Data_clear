@@ -48,6 +48,7 @@ def gerar_recibo_pagamento(
     valor_total: float,
     qtd_instalacoes: int,
     data_pagamento: str,
+    tipo_servico="Serviços"
 ):
     dados_empresa = get_dados_empresa(empresa)
 
@@ -106,6 +107,7 @@ def gerar_recibo_pagamento(
             data_pagamento=data_pagamento,
             estilo_normal=estilo_normal,
             estilo_bold=estilo_bold,
+            tipo_servico=tipo_servico,
         )
 
         
@@ -216,6 +218,7 @@ def bloco_corpo(
     valor_extenso,
     qtd_instalacoes,
     data_pagamento,
+    tipo_servico,
     estilo_normal,
     estilo_bold,
 ):
@@ -223,7 +226,7 @@ def bloco_corpo(
         ["CÓDIGO PAGAMENTO:", "1", "DATA:", data_pagamento, "1 VIA EMPRESA"],
         ["RECEBI DA EMPRESA:", empresa_nome, "", "", ""],
         ["A QUANTIA DE:", valor_extenso, "", "", ""],
-        ["REFERENTE A:", f"{qtd_instalacoes} INSTALAÇÕES", "", "", ""],
+        ["REFERENTE A:", f"{qtd_instalacoes} {tipo_servico.upper()}", "", "", ""],
         ["RECEBEDOR:", tecnico, "", "", ""],
         ["ASSINATURA DO RECEBEDOR:", "", "", "", ""],
     ]

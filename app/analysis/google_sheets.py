@@ -38,12 +38,19 @@ def get_sheets_service():
 # Leitor resiliente
 # ============================================================
 @st.cache_data(ttl=300)
-def read_sheet_as_dataframe(sheet_key="60"):
+def read_sheet_as_dataframe(sheet_key="60", start_row: int = 1):
+    """
+    Lê uma aba do Google Sheets e retorna como DataFrame.
+    
+    :param sheet_key: chave no sheet_map
+    :param start_row: linha inicial (1 = primeira linha da aba)
+    """
     cfg = get_google_sheets_config()
     service = get_sheets_service()
 
     sheet_map = {
         "60": (cfg.spreadsheet_60, cfg.sheet_name_60),
+        "60_venda": (cfg.spreadsheet_60, cfg.sheet_name_60_venda),
         "51": (cfg.spreadsheet_51, cfg.sheet_name_51),
         "51_STM": (cfg.spreadsheet_51_stm, cfg.sheet_name_51_stm),
         "39": (cfg.spreadsheet_39, cfg.sheet_name_39),
@@ -56,6 +63,7 @@ def read_sheet_as_dataframe(sheet_key="60"):
     sheet_name = sheet_name.strip()
 
     tentativas = 3
+    range_str = f"'{sheet_name}'!A{start_row}:ZZ"  # lê a partir da linha start_row
 
     for tentativa in range(tentativas):
         try:
@@ -64,7 +72,7 @@ def read_sheet_as_dataframe(sheet_key="60"):
                 .values()
                 .get(
                     spreadsheetId=spreadsheet_id,
-                    range=f"'{sheet_name}'!A:ZZ"
+                    range=range_str
                 )
                 .execute()
             )
@@ -79,7 +87,7 @@ def read_sheet_as_dataframe(sheet_key="60"):
 
     values = result.get("values", [])
 
-    if len(values) < 2:
+    if not values:
         return pd.DataFrame()
 
     headers = normalize_headers(values[0])
@@ -92,6 +100,7 @@ def read_sheet_as_dataframe(sheet_key="60"):
     ]
 
     return pd.DataFrame(normalized_rows, columns=headers)
+
 
 
 # ============================================================

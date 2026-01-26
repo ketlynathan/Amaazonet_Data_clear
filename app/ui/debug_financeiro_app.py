@@ -58,7 +58,7 @@ def render_debug_sheets():
             st.error(f"Erro ao recortar colunas da 51: {e}")
 
     # ======================================================
-    # 3️⃣ Planilha 60 — Fallback
+    # 3️⃣ Planilha 60 — Fallback (Principal)
     # ======================================================
     st.subheader("📄 Planilha 60 (Fallback)")
 
@@ -74,37 +74,86 @@ def render_debug_sheets():
 
         try:
             # D = 3 | E = 4 | AF = 31
-            status_af = sheet_60.iloc[:, 31] if sheet_60.shape[1] > 31 else None
-
-            if status_af is None:
+            if sheet_60.shape[1] <= 31:
                 st.error("A coluna AF (31) não existe na planilha 60.")
-                return
+            else:
+                df60_debug = sheet_60.iloc[:, [3, 4, 31]].copy()
+                df60_debug.columns = [
+                    "codigo_cliente",
+                    "codigo_os",
+                    "avaliacao_cq_instalacao",
+                ]
 
-            df60_debug = sheet_60.iloc[:, [3, 4]].copy()
-            df60_debug["avaliacao_cq_instalacao"] = status_af
+                for c in df60_debug.columns:
+                    df60_debug[c] = df60_debug[c].astype(str).str.strip()
 
-            df60_debug.columns = [
-                "codigo_cliente",
-                "codigo_os",
-                "avaliacao_cq_instalacao",
-            ]
+                st.subheader("🎯 Dados usados da Planilha 60")
+                st.dataframe(df60_debug.head(300), use_container_width=True)
 
-            for c in df60_debug.columns:
-                df60_debug[c] = df60_debug[c].astype(str).str.strip()
-
-            st.subheader("🎯 Dados usados da Planilha 60")
-            st.dataframe(df60_debug.head(300), use_container_width=True)
-
-            st.subheader("📊 Distribuição de status (60)")
-            st.dataframe(
-                df60_debug["avaliacao_cq_instalacao"]
-                .value_counts(dropna=False)
-                .reset_index()
-                .rename(columns={"index": "status", "avaliacao_cq_instalacao": "qtd"})
-            )
+                st.subheader("📊 Distribuição de status (60)")
+                st.dataframe(
+                    df60_debug["avaliacao_cq_instalacao"]
+                    .value_counts(dropna=False)
+                    .reset_index()
+                    .rename(columns={"index": "status", "avaliacao_cq_instalacao": "qtd"})
+                )
 
         except Exception as e:
             st.error(f"Erro ao recortar colunas da 60: {e}")
+
+
+    # ======================================================
+    # 3️⃣ Planilha 60 — Aba Secundária (Vendas)
+    # ======================================================
+    st.subheader("📄 Planilha 60 (Aba Secundária - ANÁLISE E CADASTRO)")
+
+    with st.spinner("Lendo planilha 60 (vendas)..."):
+        # Lendo a partir da linha 11218
+        sheet_60_venda = read_sheet_as_dataframe("60_venda", start_row=11218)
+
+    if sheet_60_venda.empty:
+        st.error("Planilha 60 (vendas) vazia.")
+    else:
+        st.write("Colunas reais da 60 (vendas):")
+        st.write({i: c for i, c in enumerate(sheet_60_venda.columns)})
+        st.dataframe(sheet_60_venda.head(300), use_container_width=True)
+
+        try:
+            # D = 3 | E = 4 | Y = 24
+            if sheet_60_venda.shape[1] <= 25:
+                st.error("A coluna Y (24) não existe na planilha 60_venda.")
+            else:
+                # Selecionar colunas desejadas
+                df60_venda_debug = sheet_60_venda.iloc[:, [0, 1, 4, 5, 6, 10]].copy()
+
+                df60_venda_debug.columns = [
+                    "status_analise",
+                    "vendedor",
+                    "cod_cliente",
+                    "cod_os",
+                    "empresa",   # MANIA TELECOM
+                    "tipo_venda", # A VENDA É DE UM:
+                ]
+
+                # ✅ limpar valores corretamente
+                for c in df60_venda_debug.columns:
+                    df60_venda_debug[c] = df60_venda_debug[c].astype(str).str.strip()
+
+                st.subheader("🎯 Dados usados da Planilha 60 (Vendas)")
+                st.dataframe(df60_venda_debug.head(300), use_container_width=True)
+
+                st.subheader("📊 Distribuição por Vendedor")
+                st.dataframe(
+                    df60_venda_debug["vendedor"]
+                    .value_counts(dropna=False)
+                    .reset_index()
+                    .rename(columns={"index": "vendedor", "vendedor": "qtd"})
+                )
+
+        except Exception as e:
+            st.error(f"Erro ao recortar colunas da 60_venda: {e}")
+
+
         
     read_sheet_as_dataframe("51_STM")
     # ======================================================

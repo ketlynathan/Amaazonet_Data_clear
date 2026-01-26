@@ -223,5 +223,6 @@ def render_fechamento_metabase():
 
     if not df_final.empty:
         st.markdown("---")
+        st.markdown("---")
         render_relatorio_financeiro_instalacoes()
 

@@ -17,6 +17,7 @@ from app.ui.relatorio_planilha_app import render_planilha
 from app.ui.debug_financeiro_app import render_debug_sheets
 from app.ui.fechamento_tecnicos_app import render
 from app.ui.qualidade_app import render_qualidade
+from app.ui.BackOffice_app import render_60_vendas
 
 # ======================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -51,6 +52,7 @@ with st.sidebar:
         "Planilha Google",
         "Debug Financeiro",
         "Qualidade",
+        "Back Office",
     ]
 
     pagina = st.radio(
@@ -89,5 +91,7 @@ elif pagina == "Debug Financeiro":
     render_debug_sheets()
 elif pagina == "Qualidade":
     render_qualidade()
+elif pagina == "Back Office":
+    render_60_vendas()
 else:
     st.warning("Página em construção 🚧")

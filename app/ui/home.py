@@ -77,16 +77,18 @@ def render_home():
     a, b, c = st.columns(3)
 
     with a:
-        if st.button("👤 Usuários", use_container_width=True):
-            st.session_state.pagina = "Usuários"
+        if st.button("📈 Relatórios", use_container_width=True):
+            st.session_state.pagina = "Relatórios"
+        
 
     with b:
         if st.button("🛠️ Ordens de Serviço", use_container_width=True):
             st.session_state.pagina = "Ordens de Serviço"
 
     with c:
-        if st.button("📈 Relatórios", use_container_width=True):
-            st.session_state.pagina = "Relatórios"
+        if st.button("👤 Usuários", use_container_width=True):
+            st.session_state.pagina = "Usuários"
+        
 
     st.divider()
 

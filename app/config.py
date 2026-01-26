@@ -2,13 +2,10 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from dotenv import load_dotenv
-from dataclasses import dataclass
-
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(ROOT_DIR / ".env")
-from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(dotenv_path=ROOT_DIR / ".env", override=True)
+
 
 # === HUBSOFT ACCOUNT CONFIG =======================================
 @dataclass(frozen=True)
@@ -66,6 +63,7 @@ class GoogleSheetsConfig:
 
     # Nomes das abas
     sheet_name_60: str
+    sheet_name_60_venda: str
     sheet_name_51: str
     sheet_name_51_stm: str
     sheet_name_39: str
@@ -79,15 +77,44 @@ def get_google_sheets_config() -> GoogleSheetsConfig:
         client_email=os.getenv("GOOGLE_CLIENT_EMAIL"),
         client_id=os.getenv("GOOGLE_CLIENT_ID"),
 
-        spreadsheet_60=os.getenv("GOOGLE_SHEET_ID"),
+        # IDs das planilhas
+        spreadsheet_60=os.getenv("GOOGLE_SHEET_ID_60"),
         spreadsheet_51=os.getenv("GOOGLE_SHEET_ID_51"),
         spreadsheet_51_stm=os.getenv("GOOGLE_SHEET_ID_51_STM"),
         spreadsheet_39=os.getenv("GOOGLE_SHEET_ID_39"),
 
-        sheet_name_60=os.getenv("GOOGLE_SHEET_NAME"),
-        sheet_name_51=os.getenv("GOOGLE_SHEET_NAME"),
-        sheet_name_51_stm=os.getenv("GOOGLE_SHEET_NAME"),
+        # Nomes das abas
+        sheet_name_60=os.getenv("GOOGLE_SHEET_NAME_60"),
+        sheet_name_60_venda=os.getenv("GOOGLE_SHEET_NAME_60_VENDA"),
+        sheet_name_51=os.getenv("GOOGLE_SHEET_NAME_51"),
+        sheet_name_51_stm=os.getenv("GOOGLE_SHEET_NAME_51_STM"),
         sheet_name_39=os.getenv("GOOGLE_SHEET_NAME_39"),
     )
 
 
+
+# === METABASE CONFIG =======================================
+@dataclass(frozen=True)
+class MetabaseReportConfig:
+    base_url: str
+    cards: dict
+
+
+def get_metabase_config(account: str) -> MetabaseReportConfig:
+    account = account.upper()
+
+    if account not in {"MANIA", "AMAZONET"}:
+        raise ValueError("Conta Metabase inválida. Use 'mania' ou 'amazonet'.")
+
+    base_url = _get_env(f"{account}_BASE_URL")
+
+    cards = {
+        "fechamento": _get_env(f"{account}_CARD_FECHAMENTO"),
+        "qualidade": _get_env(f"{account}_CARD_QUALIDADE"),
+        "fila": _get_env(f"{account}_CARD_FILA"),
+    }
+
+    return MetabaseReportConfig(
+        base_url=base_url,
+        cards=cards,
+    )

@@ -197,6 +197,8 @@ def render_relatorio_financeiro_retirada():
         with open(caminho, "rb") as f:
             st.download_button("⬇️ Baixar PDF", f, file_name=Path(caminho).name)
 
+    tipo_relatorio = "Retiradas"
+    
     if st.button("🧾 Gerar Recibo"):
         caminho = gerar_recibo_pagamento(
             tecnico=nome_exibicao,
@@ -204,6 +206,7 @@ def render_relatorio_financeiro_retirada():
             valor_total=total_final,
             qtd_instalacoes=len(df[df["status_financeiro"] == "PAGO"]),
             data_pagamento=data_pagamento.strftime("%d/%m/%Y"),
+            tipo_servico=tipo_relatorio
         )
         with open(caminho, "rb") as f:
             st.download_button("⬇️ Baixar Recibo", f, file_name=Path(caminho).name)

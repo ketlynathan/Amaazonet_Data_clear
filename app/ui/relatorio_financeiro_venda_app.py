@@ -6,7 +6,7 @@ from app.analysis.Financeiro.financeiro_rules_instalacao import aplicar_regras_f
 from app.analysis.pdf.pdf_relatorio import montar_tabela
 from app.analysis.pdf.pdf_recibo import gerar_recibo_pagamento
 
-def render_relatorio_financeiro_instalacoes():
+def render_relatorio_financeiro_vendas():
     st.markdown("## 🧾 Resumo Financeiro – Instalações")
 
     # ======================================================

@@ -213,7 +213,7 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
         ])
 
     tabela = Table(data, repeatRows=1, colWidths=[
-        0.8*cm, 2*cm, 1.8*cm, 3.5*cm, 4*cm, 2.5*cm, 2.2*cm, 1.5*cm
+        0.8*cm, 2.2*cm, 1.8*cm, 3.5*cm, 4*cm, 2.5*cm, 2.2*cm, 1.5*cm
     ])
  
     tabela.setStyle(TableStyle([

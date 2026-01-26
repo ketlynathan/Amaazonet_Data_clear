@@ -1,20 +1,9 @@
-import os
 import json
 import urllib.parse
 import requests
 import pandas as pd
-from dotenv import load_dotenv
 
-# ======================================================
-# LOAD ENV
-# ======================================================
-load_dotenv()
-
-MANIA_BASE_URL = os.getenv("MANIA_BASE_URL")
-AMAZONET_BASE_URL = os.getenv("AMAZONET_BASE_URL")
-
-MANIA_CARD_ID = os.getenv("MANIA_CARD_ID")
-AMAZONET_CARD_ID = os.getenv("AMAZONET_CARD_ID")
+from app.config import get_metabase_config
 
 
 # ======================================================
@@ -36,43 +25,37 @@ def _montar_url(base_url: str, card_id: str, data_inicio, data_fim) -> str:
 
     params_str = urllib.parse.quote(json.dumps(parameters))
 
-    return (
-        f"{base_url}/api/public/card/{card_id}/query/json"
-        f"?parameters={params_str}"
-    )
+    return f"{base_url}/api/public/card/{card_id}/query/json?parameters={params_str}"
 
 
 # ======================================================
-# SERVICE
+# SERVICE GENÉRICO DE RELATÓRIOS METABASE
 # ======================================================
-def carregar_fechamento_metabase(
+def carregar_relatorio_metabase(
     conta: str,
+    tipo_relatorio: str,
     data_inicio,
     data_fim,
 ) -> pd.DataFrame:
+    """
+    conta: 'mania' ou 'amazonet'
+    tipo_relatorio: 'fechamento', 'qualidade', 'fila', etc
+    """
 
-    if conta == "mania":
-        base_url = MANIA_BASE_URL
-        card_id = MANIA_CARD_ID
+    tipo_relatorio = tipo_relatorio.lower()
+    config = get_metabase_config(conta)
 
-    elif conta == "amazonet":
-        base_url = AMAZONET_BASE_URL
-        card_id = AMAZONET_CARD_ID
-
-    else:
-        return pd.DataFrame()
-
-    if not base_url or not card_id:
-        raise RuntimeError(
-            f"Configuração ausente no .env para conta: {conta}"
+    card_id = config.cards.get(tipo_relatorio)
+    if not card_id:
+        raise ValueError(
+            f"Relatório '{tipo_relatorio}' não configurado para a conta {conta.upper()}"
         )
 
-    url = _montar_url(base_url, card_id, data_inicio, data_fim)
+    url = _montar_url(config.base_url, card_id, data_inicio, data_fim)
 
     try:
         response = requests.get(url, timeout=60)
         response.raise_for_status()
-
         data = response.json()
 
         if not data:
@@ -80,13 +63,29 @@ def carregar_fechamento_metabase(
 
         df = pd.DataFrame(data)
         df["conta"] = conta.upper()
+        df["tipo_relatorio"] = tipo_relatorio.upper()
 
         return df
 
     except Exception as e:
         print("======================================")
-        print(f"[ERRO METABASE - {conta.upper()}]")
+        print(f"[ERRO METABASE - {conta.upper()} - {tipo_relatorio.upper()}]")
         print("URL:", url)
         print("ERRO:", e)
         print("======================================")
         return pd.DataFrame()
+
+
+# ======================================================
+# FUNÇÕES ESPECÍFICAS (OPCIONAL – AÇÚCAR SINTÁTICO)
+# ======================================================
+def carregar_fechamento_metabase(conta: str, data_inicio, data_fim) -> pd.DataFrame:
+    return carregar_relatorio_metabase(conta, "fechamento", data_inicio, data_fim)
+
+
+def carregar_qualidade_metabase(conta: str, data_inicio, data_fim) -> pd.DataFrame:
+    return carregar_relatorio_metabase(conta, "qualidade", data_inicio, data_fim)
+
+
+def carregar_fila_metabase(conta: str, data_inicio, data_fim) -> pd.DataFrame:
+    return carregar_relatorio_metabase(conta, "fila", data_inicio, data_fim)
