@@ -10,6 +10,8 @@ BASE_DIR = Path(__file__).resolve().parents[1]  # /app/app
 IMG_DIR = BASE_DIR / "img"
 
 
+
+
 def render_home():
 
     # ======================================================

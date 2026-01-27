@@ -5,8 +5,7 @@ from app.analysis.google_sheets import read_sheet_as_dataframe
 
 def render_60_vendas():
     """
-    Renderiza a aba de vendas da Planilha 60 com filtros laterais
-    e gráficos de distribuição por vendedor e back.
+    Renderiza a aba de vendas da Planilha 60 com filtros laterais.
     """
 
     st.subheader("📄 Planilha 60 (Vendas) - ANÁLISE E CADASTRO")
@@ -30,8 +29,8 @@ def render_60_vendas():
         "vendedor",
         "cod_cliente",
         "cod_os",
-        "empresa",
-        "tipo_venda",
+        "empresa",      # MANIA TELECOM / AMAZONET
+        "tipo_venda",   # A VENDA É DE UM:
     ]
 
     # Limpar valores
@@ -50,19 +49,29 @@ def render_60_vendas():
     with st.sidebar:
         st.subheader("🎛️ Filtros de Vendas")
 
-        # Filtro por empresa
-        empresas = sorted(df60_venda_debug["empresa"].dropna().unique())
+        # ------------------------------
+        # Filtro por empresa (apenas Amazonet e Mania Telecom)
+        # ------------------------------
+        empresas_validas = ["Amazonet", "Mania Telecom"]
+        # Garantir que só exiba as empresas válidas que estão no DF
+        empresas_existentes = [e for e in empresas_validas if e in df60_venda_debug["empresa"].unique()]
+
         selected_empresas = st.multiselect(
             "Empresa",
-            empresas,
-            default=empresas
+            empresas_existentes,
+            default=empresas_existentes
         )
 
+        # ------------------------------
         # Filtro por Back
+        # ------------------------------
         back_options = ["Todos"] + sorted(df60_venda_debug["back"].dropna().unique())
         selected_back = st.selectbox("Back", back_options)
 
+        # ------------------------------
         # Filtro período
+        # ------------------------------
+        hoje = date.today()
         min_date = df60_venda_debug["data_fechamento"].min().date()
         max_date = df60_venda_debug["data_fechamento"].max().date()
         data_inicio = st.date_input("Data início (fechamento)", min_value=min_date, max_value=max_date, value=min_date)
@@ -91,7 +100,7 @@ def render_60_vendas():
     st.dataframe(df_filtrado, use_container_width=True)
 
     # ------------------------------
-    # Distribuição por Vendedor
+    # Distribuição por vendedor
     # ------------------------------
     st.subheader("📊 Distribuição por Vendedor")
     df_vendedor_count = df_filtrado["vendedor"].value_counts(dropna=False).reset_index()
@@ -99,7 +108,7 @@ def render_60_vendas():
     st.bar_chart(df_vendedor_count.set_index("vendedor"))
 
     # ------------------------------
-    # Distribuição por Back (Gráfico de barras)
+    # Distribuição por Back
     # ------------------------------
     st.subheader("📊 Distribuição por Back")
     df_back_count = df_filtrado["back"].value_counts(dropna=False).reset_index()

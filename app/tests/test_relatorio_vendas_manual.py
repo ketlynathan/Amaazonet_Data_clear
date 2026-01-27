@@ -1,5 +1,5 @@
 from datetime import date
-from app.analysis.relatorios.vendas import relatorio_vendas_df
+from app.analysis.relatorios.relatorio_vendas import relatorio_vendas_df
 
 
 def main():

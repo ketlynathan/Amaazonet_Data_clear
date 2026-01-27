@@ -1,13 +1,17 @@
 import streamlit as st
 import pandas as pd
-from datetime import timedelta
+from datetime import datetime, date, timedelta
 from pathlib import Path
-from app.analysis.Financeiro.financeiro_rules_instalacao import aplicar_regras_financeiras
+from app.analysis.Financeiro.financeiro_rules_venda import aplicar_regras_financeiras
 from app.analysis.pdf.pdf_relatorio import montar_tabela
 from app.analysis.pdf.pdf_recibo import gerar_recibo_pagamento
 
+
+
+
 def render_relatorio_financeiro_vendas():
-    st.markdown("## 🧾 Resumo Financeiro – Instalações")
+    st.markdown("## 🧾 Resumo Financeiro – Vendas")
+   
 
     # ======================================================
     # 1️⃣ Blindagem
@@ -34,7 +38,7 @@ def render_relatorio_financeiro_vendas():
     # ======================================================
     # 3️⃣ Filtro de Técnico (com busca)
     # ======================================================
-    st.markdown("### 👷 Técnico")
+    st.markdown("### Vendedor")
     tecnicos = sorted(df["usuario_fechamento"].dropna().unique())
     busca = st.text_input("Pesquisar técnico")
 
@@ -174,7 +178,7 @@ def render_relatorio_financeiro_vendas():
     periodo_txt = f"{data_inicio:%d/%m} - {data_fim:%d/%m}"
     pagamento_txt = f"{data_pagamento:%d/%m/%Y}"
 
-    # Nome do técnico
+    # Nome do Vendedor
     if "LOBATOS" in tecnico_selecionado.upper():
         nome_exibicao = "Leidinaldo Lobato da Fonseca"
     else:
@@ -187,7 +191,7 @@ def render_relatorio_financeiro_vendas():
         if logo_path and Path(logo_path).exists():
             cols[0].image(logo_path, width=130)
         cols[1].markdown(
-            "<div style='text-align:center;font-size:28px;font-weight:700;'>Resumo Instalações</div>",
+            "<div style='text-align:center;font-size:28px;font-weight:700;'>Resumo Vendas</div>",
             unsafe_allow_html=True
         )
         st_card(f"Técnico: {nome_exibicao}", tamanho=18)
@@ -244,7 +248,7 @@ def render_relatorio_financeiro_vendas():
     tipo_relatorio = "Instalações"
 
 
-    if st.button("📄 Gerar Relatório do Técnico"):
+    if st.button("📄 Gerar Relatório"):
         caminho = montar_tabela(
             df=auditoria_df,
             tecnico=nome_exibicao,
@@ -270,3 +274,5 @@ def render_relatorio_financeiro_vendas():
             )
             with open(caminho, "rb") as f:
                 st.download_button("⬇️ Baixar Recibo", f, file_name=Path(caminho).name, mime="application/pdf")
+                
+    

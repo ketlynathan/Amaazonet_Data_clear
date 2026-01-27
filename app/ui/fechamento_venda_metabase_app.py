@@ -1,10 +1,33 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, timedelta
-
+from datetime import date
 from app.analysis.metabase_service import carregar_fila_metabase
+from app.ui.relatorios_finaceiro_vendas_app import render_relatorio_financeiro_vendas
 
-COL_VENDEDOR = "usuario_abertura"
+
+COL_VENDEDOR = "vendedor"
+UNIDADES = {
+    "STM": ["Santarém"],
+
+    "REGIONAIS PA": [
+        "Alenquer", "Marabá", "Prainha",
+        "Monte Alegre", "Óbidos", "Oriximiná",
+        "Belterra", "Mojuí Dos Campos", "Itaituba",
+        "Curuá", "Uruará", "Alter Do Chão",
+    ],
+
+    "MAO": ["Manaus"],
+
+    "REGIONAIS AM": [
+        "Presidente Figueiredo",
+        "Manacapuru",
+        "Iranduba",
+        "Parintins",
+        "Itacoatiara",
+        "Rio Preto Da Eva"
+    ],
+}
+
 
 
 TIPOS_OS_FECHAMENTO_POR_CONTA = {
@@ -46,7 +69,7 @@ def render_venda_metabase():
     st.session_state.setdefault("dados_carregados_vendas", False)
 
     # =========================
-    # SIDEBAR (FILTROS DE CARGA)
+    # SIDEBAR — FILTROS DE CARGA
     # =========================
     with st.sidebar:
         st.subheader("🎛️ Filtros de Carga")
@@ -58,13 +81,13 @@ def render_venda_metabase():
         )
 
         hoje = date.today()
-        data_inicio = st.date_input("Data início (cadastro OS)", hoje - timedelta(days=30))
+        data_inicio = st.date_input("Data início (cadastro OS)")
         data_fim = st.date_input("Data fim (cadastro OS)", hoje)
 
         gerar = st.button("🚀 Gerar Relatório")
 
     # =========================
-    # CARGA (SÓ QUANDO CLICA)
+    # CARGA DOS DADOS
     # =========================
     if gerar:
         with st.spinner("🔄 Carregando dados do Metabase..."):
@@ -80,10 +103,11 @@ def render_venda_metabase():
         df["cidade"] = df["cidade"].astype(str).str.strip().str.title()
         df["usuario_abertura"] = df["usuario_abertura"].astype(str).str.strip().str.upper()
         df["tipo_ordem_servico"] = df["tipo_ordem_servico"].astype(str).str.strip()
+        df["vendedor"] = df["vendedor"].astype(str).str.strip().str.title()
 
         df = df[
-            (df["data_cadastro_os"].dt.date >= data_inicio) &
-            (df["data_cadastro_os"].dt.date <= data_fim)
+            (df["data_termino_executado"].dt.date >= data_inicio) &
+            (df["data_termino_executado"].dt.date <= data_fim)
         ]
 
         df = df[
@@ -117,111 +141,156 @@ def render_venda_metabase():
             "_conta_origem_debug": "conta",
         }, inplace=True)
 
-        df_vendas = df_vendas.loc[:, ~df_vendas.columns.duplicated()]
         df_vendas = df_vendas.sort_values("data_abertura_os", ascending=False)
 
         st.session_state["df_vendas_base"] = df_vendas
         st.session_state["dados_carregados_vendas"] = True
 
-    import streamlit as st
-import pandas as pd
-from datetime import date, timedelta
-from app.analysis.google_sheets import read_sheet_as_dataframe
-
-def render_60_vendas():
-    """
-    Renderiza a aba de vendas da Planilha 60 com filtros laterais.
-    """
-
-    st.subheader("📄 Planilha 60 (Vendas) - ANÁLISE E CADASTRO")
-
     # =========================
-    # Leitura da aba a partir da linha 11218
+    # EXIBIÇÃO + FILTROS PÓS-CARGA
     # =========================
-    with st.spinner("Lendo planilha 60 (vendas)..."):
-        sheet_60_venda = read_sheet_as_dataframe("60_venda", start_row=11218)
+    if st.session_state["dados_carregados_vendas"]:
 
-    if sheet_60_venda.empty:
-        st.error("Planilha 60 (vendas) vazia.")
-        return
+        df_base = st.session_state["df_vendas_base"]
 
-    # ------------------------------
-    # Selecionar colunas de interesse
-    # ------------------------------
-    df60_venda_debug = sheet_60_venda.iloc[:, [0, 1, 4, 5, 6, 10]].copy()
-    df60_venda_debug.columns = [
-        "status_analise",
-        "vendedor",
-        "cod_cliente",
-        "cod_os",
-        "empresa",      # MANIA TELECOM / AMAZONET
-        "tipo_venda",   # A VENDA É DE UM:
-    ]
+        if df_base.empty:
+            st.warning("Sem dados carregados.")
+            return
 
-    # Limpar valores
-    for c in df60_venda_debug.columns:
-        df60_venda_debug[c] = df60_venda_debug[c].astype(str).str.strip()
+        st.success(f"✅ {len(df_base)} vendas encontradas")
 
-    # ------------------------------
-    # Adicionar colunas auxiliares
-    # ------------------------------
-    df60_venda_debug["back"] = sheet_60_venda.iloc[:, 3].astype(str).str.strip()  # coluna D original
-    df60_venda_debug["data_fechamento"] = pd.to_datetime(sheet_60_venda.iloc[:, 7], errors="coerce")  # coluna 7 = Data termino
+        # =========================
+        # FILTROS
+        # =========================
+        st.subheader("🎯 Filtros")
 
-    # =========================
-    # Sidebar de filtros
-    # =========================
-    with st.sidebar:
-        st.subheader("🎛️ Filtros de Vendas")
+        col1, col2, col3 = st.columns(3)
 
-        # Filtro por empresa
-        empresas = sorted(df60_venda_debug["empresa"].dropna().unique())
-        selected_empresas = st.multiselect(
-            "Empresa",
-            empresas,
-            default=empresas
-        )
+        # -------- VENDEDOR --------
+        with col1:
+            st.markdown("### Vendedor")
 
-        # Filtro por Back
-        back_options = ["Todos"] + sorted(df60_venda_debug["back"].dropna().unique())
-        selected_back = st.selectbox("Back", back_options)
+            busca_vendedor = st.text_input("Buscar vendedor")
 
-        # Filtro período
-        hoje = date.today()
-        min_date = df60_venda_debug["data_fechamento"].min().date()
-        max_date = df60_venda_debug["data_fechamento"].max().date()
-        data_inicio = st.date_input("Data início (fechamento)", min_value=min_date, max_value=max_date, value=min_date)
-        data_fim = st.date_input("Data fim (fechamento)", min_value=min_date, max_value=max_date, value=max_date)
+            vendedores = (
+                df_base["vendedor"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+                .sort_values()
+                .unique()
+                .tolist()
+            )
 
-    # =========================
-    # Aplicar filtros
-    # =========================
-    df_filtrado = df60_venda_debug.copy()
+            if busca_vendedor:
+                vendedores = [v for v in vendedores if busca_vendedor.lower() in v.lower()]
 
-    if selected_empresas:
-        df_filtrado = df_filtrado[df_filtrado["empresa"].isin(selected_empresas)]
+            filtro_vendedor = st.multiselect(
+                "Selecionar vendedor(es)",
+                vendedores,
+                default=vendedores,
+            )
 
-    if selected_back != "Todos":
-        df_filtrado = df_filtrado[df_filtrado["back"] == selected_back]
 
-    df_filtrado = df_filtrado[
-        (df_filtrado["data_fechamento"].dt.date >= data_inicio) &
-        (df_filtrado["data_fechamento"].dt.date <= data_fim)
-    ]
+        # -------- BACK OFFICE --------
+        with col2:
+            st.markdown("### Back Office")
 
-    # =========================
-    # Mostrar resultados
-    # =========================
-    st.success(f"✅ {len(df_filtrado)} vendas encontradas")
-    st.dataframe(df_filtrado, use_container_width=True)
+            busca_bo = st.text_input("Buscar Back Office")
 
-    # ------------------------------
-    # Distribuição por vendedor
-    # ------------------------------
-    st.subheader("📊 Distribuição por Vendedor")
-    st.dataframe(
-        df_filtrado["vendedor"]
-        .value_counts(dropna=False)
-        .reset_index()
-        .rename(columns={"index": "vendedor", "vendedor": "qtd"})
+            backoffices = (
+                df_base["usuario_abertura"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+                .sort_values()
+                .unique()
+                .tolist()
+            )
+
+            if busca_bo:
+                backoffices = [b for b in backoffices if busca_bo.lower() in b.lower()]
+
+            filtro_backoffice = st.multiselect(
+                "Selecionar Back Office(s)",
+                backoffices,
+                default=backoffices,
+            )
+
+
+        # -------- UNIDADE --------
+        with col3:
+            st.markdown("### Unidade")
+
+            unidades_disponiveis = list(UNIDADES.keys())
+
+            filtro_unidade = st.multiselect(
+                "Selecionar unidade(s)",
+                unidades_disponiveis,
+                default=unidades_disponiveis,
+            )
+        
+        df_filtrado = df_base.copy()
+
+    # Filtro vendedor
+    if filtro_vendedor:
+        df_filtrado = df_filtrado[df_filtrado["vendedor"].isin(filtro_vendedor)]
+
+    # Filtro back office
+    if filtro_backoffice:
+        df_filtrado = df_filtrado[df_filtrado["usuario_abertura"].isin(filtro_backoffice)]
+
+    # Filtro unidade (cidade agrupada)
+    if filtro_unidade:
+        cidades_permitidas = []
+
+        for unidade in filtro_unidade:
+            cidades_permitidas.extend(UNIDADES.get(unidade, []))
+
+        df_filtrado = df_filtrado[df_filtrado["cidade"].isin(cidades_permitidas)]
+    
+    st.markdown("## 📊 Resumo Geral")
+
+    colA, colB, colC = st.columns(3)
+
+    total_os = len(df_filtrado)
+    total_vendedores = df_filtrado["vendedor"].nunique()
+    total_unidades = df_filtrado["cidade"].map(
+        lambda c: next((u for u, cidades in UNIDADES.items() if c in cidades), None)
+    ).nunique()
+
+    colA.metric("Total de Vendas", total_os)
+    colB.metric("Vendedores Ativos", total_vendedores)
+    colC.metric("Unidades Atendidas", total_unidades)
+
+    def mapear_unidade(cidade):
+        for unidade, cidades in UNIDADES.items():
+            if cidade in cidades:
+                return unidade
+        return "Outra"
+
+    df_filtrado["unidade"] = df_filtrado["cidade"].apply(mapear_unidade)
+    st.markdown("## 🏙️ Vendas por Unidade")
+
+    vendas_unidade = (
+        df_filtrado.groupby("unidade")
+        .size()
+        .reset_index(name="Total de Vendas")
+        .sort_values("Total de Vendas", ascending=False)
     )
+
+    st.dataframe(vendas_unidade, use_container_width=True)
+
+
+
+
+    st.success(f"📊 {len(df_filtrado)} ordens após filtros")
+
+    st.dataframe(df_filtrado, use_container_width=True)
+    # 🔗 DISPONIBILIZA PARA O FINANCEIRO
+    st.session_state["df_fechamento_filtrado"] = df_filtrado
+    
+    if not df_filtrado.empty:
+        st.markdown("---")
+        st.markdown("---")
+        render_relatorio_financeiro_vendas()
