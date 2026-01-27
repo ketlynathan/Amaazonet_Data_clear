@@ -10,37 +10,49 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v4
+      # 1) Checkout do código
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      # 2) Debug (opcional, mas recomendo manter por enquanto)
       - name: Show current directory (debug)
+        shell: powershell
         run: |
           pwd
           dir
-        shell: powershell
 
-      - name: Create .env file (UTF-8 safe)
+      # 3) Criar .env SEM BOM (Windows-safe)
+      - name: Create .env file
         shell: powershell
         run: |
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
-          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
-          "@
-            $content | Out-File -FilePath .env -Encoding utf8 -Force
+          @"
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASS=${{ secrets.DB_PASS }}
+            API_KEY=${{ secrets.API_KEY }}
+            "@ | Out-File -FilePath .env -Encoding ascii -Force
 
+      # 4) Derrubar containers antigos
       - name: Docker down
-        run: docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
         shell: powershell
+        run: |
+          docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
 
+      # 5) Build da imagem
       - name: Docker build
-        run: docker compose -f docker-compose.prod.yml build --no-cache
         shell: powershell
+        run: |
+          docker compose -f docker-compose.prod.yml build --no-cache
 
+      # 6) Subir containers
       - name: Docker up
-        run: docker compose -f docker-compose.prod.yml up -d
         shell: powershell
+        run: |
+          docker compose -f docker-compose.prod.yml up -d
 
+      # 7) Verificação final
       - name: Docker ps
-        run: docker ps
         shell: powershell
+        run: |
+          docker ps
