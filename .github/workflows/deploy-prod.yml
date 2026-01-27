@@ -18,14 +18,16 @@ jobs:
           dir
         shell: powershell
 
-      - name: Create .env file
+      - name: Create .env file (UTF-8 safe)
+        shell: powershell
         run: |
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
           echo "API_KEY=${{ secrets.API_KEY }}" >> .env
-        shell: powershell
+          "@
+            $content | Out-File -FilePath .env -Encoding utf8 -Force
 
       - name: Docker down
         run: docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
