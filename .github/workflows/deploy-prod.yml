@@ -31,7 +31,7 @@ jobs:
             DB_USER=${{ secrets.DB_USER }}
             DB_PASS=${{ secrets.DB_PASS }}
             API_KEY=${{ secrets.API_KEY }}
-            "@ | Out-File -FilePath .env -Encoding ascii -Force
+          "@ | Out-File -FilePath .env -Encoding ascii -Force
 
       # 4) Derrubar containers antigos
       - name: Docker down
