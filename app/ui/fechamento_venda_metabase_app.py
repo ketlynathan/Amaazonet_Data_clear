@@ -232,65 +232,65 @@ def render_venda_metabase():
         
         df_filtrado = df_base.copy()
 
-    # Filtro vendedor
-    if filtro_vendedor:
-        df_filtrado = df_filtrado[df_filtrado["vendedor"].isin(filtro_vendedor)]
+        # Filtro vendedor
+        if filtro_vendedor:
+            df_filtrado = df_filtrado[df_filtrado["vendedor"].isin(filtro_vendedor)]
 
-    # Filtro back office
-    if filtro_backoffice:
-        df_filtrado = df_filtrado[df_filtrado["usuario_abertura"].isin(filtro_backoffice)]
+        # Filtro back office
+        if filtro_backoffice:
+            df_filtrado = df_filtrado[df_filtrado["usuario_abertura"].isin(filtro_backoffice)]
 
-    # Filtro unidade (cidade agrupada)
-    if filtro_unidade:
-        cidades_permitidas = []
+        # Filtro unidade (cidade agrupada)
+        if filtro_unidade:
+            cidades_permitidas = []
 
-        for unidade in filtro_unidade:
-            cidades_permitidas.extend(UNIDADES.get(unidade, []))
+            for unidade in filtro_unidade:
+                cidades_permitidas.extend(UNIDADES.get(unidade, []))
 
-        df_filtrado = df_filtrado[df_filtrado["cidade"].isin(cidades_permitidas)]
-    
-    st.markdown("## 📊 Resumo Geral")
+            df_filtrado = df_filtrado[df_filtrado["cidade"].isin(cidades_permitidas)]
+        
+        st.markdown("## 📊 Resumo Geral")
 
-    colA, colB, colC = st.columns(3)
+        colA, colB, colC = st.columns(3)
 
-    total_os = len(df_filtrado)
-    total_vendedores = df_filtrado["vendedor"].nunique()
-    total_unidades = df_filtrado["cidade"].map(
-        lambda c: next((u for u, cidades in UNIDADES.items() if c in cidades), None)
-    ).nunique()
+        total_os = len(df_filtrado)
+        total_vendedores = df_filtrado["vendedor"].nunique()
+        total_unidades = df_filtrado["cidade"].map(
+            lambda c: next((u for u, cidades in UNIDADES.items() if c in cidades), None)
+        ).nunique()
 
-    colA.metric("Total de Vendas", total_os)
-    colB.metric("Vendedores Ativos", total_vendedores)
-    colC.metric("Unidades Atendidas", total_unidades)
+        colA.metric("Total de Vendas", total_os)
+        colB.metric("Vendedores Ativos", total_vendedores)
+        colC.metric("Unidades Atendidas", total_unidades)
 
-    def mapear_unidade(cidade):
-        for unidade, cidades in UNIDADES.items():
-            if cidade in cidades:
-                return unidade
-        return "Outra"
+        def mapear_unidade(cidade):
+            for unidade, cidades in UNIDADES.items():
+                if cidade in cidades:
+                    return unidade
+            return "Outra"
 
-    df_filtrado["unidade"] = df_filtrado["cidade"].apply(mapear_unidade)
-    st.markdown("## 🏙️ Vendas por Unidade")
+        df_filtrado["unidade"] = df_filtrado["cidade"].apply(mapear_unidade)
+        st.markdown("## 🏙️ Vendas por Unidade")
 
-    vendas_unidade = (
-        df_filtrado.groupby("unidade")
-        .size()
-        .reset_index(name="Total de Vendas")
-        .sort_values("Total de Vendas", ascending=False)
-    )
+        vendas_unidade = (
+            df_filtrado.groupby("unidade")
+            .size()
+            .reset_index(name="Total de Vendas")
+            .sort_values("Total de Vendas", ascending=False)
+        )
 
-    st.dataframe(vendas_unidade, use_container_width=True)
-
-
+        st.dataframe(vendas_unidade, use_container_width=True)
 
 
-    st.success(f"📊 {len(df_filtrado)} ordens após filtros")
 
-    st.dataframe(df_filtrado, use_container_width=True)
-    # 🔗 DISPONIBILIZA PARA O FINANCEIRO
-    st.session_state["df_fechamento_filtrado"] = df_filtrado
-    
-    if not df_filtrado.empty:
-        st.markdown("---")
-        st.markdown("---")
-        render_relatorio_financeiro_vendas()
+
+        st.success(f"📊 {len(df_filtrado)} ordens após filtros")
+
+        st.dataframe(df_filtrado, use_container_width=True)
+        # 🔗 DISPONIBILIZA PARA O FINANCEIRO
+        st.session_state["df_fechamento_filtrado"] = df_filtrado
+        
+        if not df_filtrado.empty:
+            st.markdown("---")
+            st.markdown("---")
+            render_relatorio_financeiro_vendas()
