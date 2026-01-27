@@ -12,9 +12,28 @@ def carregar_planilhas_financeiro():
     s51.columns = ["codigo_cliente", "numero_ordem_servico", "info_51", "status_51"]
     s51 = padronizar_campos_chave(s51)
 
-    s60 = sheet_60.iloc[:, [3, 4, 7, 21]].copy()
-    s60.columns = ["codigo_cliente", "numero_ordem_servico", "info_60", "status_60"]
-    s60 = padronizar_campos_chave(s60)
+    s60 = sheet_60.iloc[:, [1, 3, 4, 7, 21]].copy()
+    s60.columns = [
+        "nome_vendedor",
+        "codigo_cliente",
+        "numero_ordem_servico",
+        "tipo_vendedor",
+        "status_60"
+    ]
+
+    # Padroniza campos chave
+    s60["codigo_cliente"] = s60["codigo_cliente"].astype(str).str.strip().str.upper()
+    s60["numero_ordem_servico"] = s60["numero_ordem_servico"].astype(str).str.strip().str.upper()
+
+    # Padroniza texto do tipo
+    s60["tipo_vendedor"] = s60["tipo_vendedor"].astype(str).str.strip().str.upper()
+    s60["nome_vendedor"] = s60["nome_vendedor"].astype(str).str.strip()
+
+    s60_autonomo = s60[s60["tipo_vendedor"] == "VENDEDOR AUTÔNOMO"].copy()
+
+    return s51, s60, s60_autonomo
+
+
 
     stm = sheet_51_stm.iloc[:, [2, 3, 10, 23]].copy()
     stm.columns = ["codigo_cliente", "numero_ordem_servico", "info_51_stm", "status_51_stm"]

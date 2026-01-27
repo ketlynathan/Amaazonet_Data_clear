@@ -3,7 +3,7 @@ from app.analysis.Financeiro.financeiro_sources import carregar_planilhas_financ
 from app.analysis.Financeiro.financeiro_utils import padronizar_campos_chave
 
 
-def aplicar_regras(df_base: pd.DataFrame) -> dict:
+def aplicar_regras(df_base):
     df_base = padronizar_campos_chave(df_base)
 
     s51, s60, stm = carregar_planilhas_financeiro()
