@@ -10,35 +10,79 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v4
+      # 1) Checkout do código
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      # 2) Debug (opcional, pode remover depois)
       - name: Show current directory (debug)
+        shell: powershell
         run: |
           pwd
           dir
-        shell: powershell
 
+      # 3) Criar .env SEM BOM (Windows-safe)
       - name: Create .env file
+        shell: powershell
         run: |
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
-          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
-        shell: powershell
+          @"
+          GOOGLE_PROJECT_ID=${{ secrets.GOOGLE_PROJECT_ID }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_EMAIL=${{ secrets.GOOGLE_CLIENT_EMAIL }}
+          GOOGLE_PRIVATE_KEY=${{ secrets.GOOGLE_PRIVATE_KEY }}
+          GOOGLE_PRIVATE_KEY_ID=${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
 
+          GOOGLE_SHEET_ID_39=${{ secrets.GOOGLE_SHEET_ID_39 }}
+          GOOGLE_SHEET_ID_51=${{ secrets.GOOGLE_SHEET_ID_51 }}
+          GOOGLE_SHEET_ID_51_STM=${{ secrets.GOOGLE_SHEET_ID_51_STM }}
+          GOOGLE_SHEET_ID_60=${{ secrets.GOOGLE_SHEET_ID_60 }}
+
+          GOOGLE_SHEET_NAME_39=${{ secrets.GOOGLE_SHEET_NAME_39 }}
+          GOOGLE_SHEET_NAME_51=${{ secrets.GOOGLE_SHEET_NAME_51 }}
+          GOOGLE_SHEET_NAME_51_STM=${{ secrets.GOOGLE_SHEET_NAME_51_STM }}
+          GOOGLE_SHEET_NAME_60=${{ secrets.GOOGLE_SHEET_NAME_60 }}
+          GOOGLE_SHEET_NAME_60_VENDA=${{ secrets.GOOGLE_SHEET_NAME_60_VENDA }}
+
+          AMAZONET_BASE_URL=${{ secrets.AMAZONET_BASE_URL }}
+          AMAZONET_CARD_ID=${{ secrets.AMAZONET_CARD_ID }}
+          MANIA_BASE_URL=${{ secrets.MANIA_BASE_URL }}
+          MANIA_CARD_ID=${{ secrets.MANIA_CARD_ID }}
+
+          HUBSOFT_AMAZONET_API_BASE=${{ secrets.HUBSOFT_AMAZONET_API_BASE }}
+          HUBSOFT_AMAZONET_CLIENT_ID=${{ secrets.HUBSOFT_AMAZONET_CLIENT_ID }}
+          HUBSOFT_AMAZONET_CLIENT_SECRET=${{ secrets.HUBSOFT_AMAZONET_CLIENT_SECRET }}
+          HUBSOFT_AMAZONET_USER=${{ secrets.HUBSOFT_AMAZONET_USER }}
+          HUBSOFT_AMAZONET_PASSWORD=${{ secrets.HUBSOFT_AMAZONET_PASSWORD }}
+          HUBSOFT_AMAZONET_TOKEN_URL=${{ secrets.HUBSOFT_AMAZONET_TOKEN_URL }}
+
+          HUBSOFT_MANIA_API_BASE=${{ secrets.HUBSOFT_MANIA_API_BASE }}
+          HUBSOFT_MANIA_CLIENT_ID=${{ secrets.HUBSOFT_MANIA_CLIENT_ID }}
+          HUBSOFT_MANIA_CLIENT_SECRET=${{ secrets.HUBSOFT_MANIA_CLIENT_SECRET }}
+          HUBSOFT_MANIA_USER=${{ secrets.HUBSOFT_MANIA_USER }}
+          HUBSOFT_MANIA_PASSWORD=${{ secrets.HUBSOFT_MANIA_PASSWORD }}
+          HUBSOFT_MANIA_TOKEN_URL=${{ secrets.HUBSOFT_MANIA_TOKEN_URL }}
+          "@ | Out-File -FilePath .env -Encoding ascii -Force
+
+      # 4) Derrubar containers antigos
       - name: Docker down
-        run: docker compose -f docker-compose.prod.yml down --volumes --remove-orphans
         shell: powershell
+        run: |
+          docker compose -f docker-compose.prod.yml down --remove-orphans
 
+      # 5) Build da imagem
       - name: Docker build
-        run: docker compose -f docker-compose.prod.yml build --no-cache
         shell: powershell
+        run: |
+          docker compose -f docker-compose.prod.yml build
 
+      # 6) Subir containers
       - name: Docker up
-        run: docker compose -f docker-compose.prod.yml up -d
         shell: powershell
+        run: |
+          docker compose -f docker-compose.prod.yml up -d
 
+      # 7) Verificação final
       - name: Docker ps
-        run: docker ps
         shell: powershell
+        run: |
+          docker ps
