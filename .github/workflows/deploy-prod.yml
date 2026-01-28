@@ -44,9 +44,19 @@ jobs:
           GOOGLE_SHEET_NAME_60_VENDA=${{ secrets.GOOGLE_SHEET_NAME_60_VENDA }}
 
           AMAZONET_BASE_URL=${{ secrets.AMAZONET_BASE_URL }}
-          AMAZONET_CARD_ID=${{ secrets.AMAZONET_CARD_ID }}
           MANIA_BASE_URL=${{ secrets.MANIA_BASE_URL }}
-          MANIA_CARD_ID=${{ secrets.MANIA_CARD_ID }}
+
+          MANIA_CARD_FECHAMENTO=${{ secrets.MANIA_CARD_FECHAMENTO }}
+          AMAZONET_CARD_FECHAMENTO=${{ secrets.AMAZONET_CARD_FECHAMENTO }}
+
+          # ================== QUALIDADE ================== Auditoria de instalação
+          MANIA_CARD_QUALIDADE=${{ secrets.MANIA_CARD_QUALIDADE }}
+          AMAZONET_CARD_QUALIDADE=${{ secrets.AMAZONET_CARD_QUALIDADE }}
+
+          # ================== FILA ================== Fila de ordem OS
+          MANIA_CARD_FILA=${{ secrets.MANIA_CARD_FILA }}
+          AMAZONET_CARD_FILA=${{ secrets.AMAZONET_CARD_FILA }}
+          
 
           HUBSOFT_AMAZONET_API_BASE=${{ secrets.HUBSOFT_AMAZONET_API_BASE }}
           HUBSOFT_AMAZONET_CLIENT_ID=${{ secrets.HUBSOFT_AMAZONET_CLIENT_ID }}
