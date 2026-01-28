@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import time
+from typing import List
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -34,24 +35,29 @@ def get_sheets_service():
 
 
 # ============================================================
-# Leitor resiliente das planilhas 51 e 60
+# Leitor resiliente das planilhas
 # ============================================================
 @st.cache_data(ttl=300)
-def read_sheet_as_dataframe(sheet_key="60"):
+def read_sheet_as_dataframe(sheet_key: str = "60", start_row: int = 1):
     cfg = get_google_sheets_config()
     service = get_sheets_service()
 
-    # Mapeia qual planilha usar
+    # 🔁 Mapeamento completo restaurado
     sheet_map = {
-        "51": cfg.spreadsheet_51,
-        "60": cfg.spreadsheet_60,
+        "60": (cfg.spreadsheet_60, cfg.sheet_name_60),
+        "60_venda": (cfg.spreadsheet_60, cfg.sheet_name_60_venda),
+        "51": (cfg.spreadsheet_51, cfg.sheet_name_51),
+        "51_STM": (cfg.spreadsheet_51_stm, cfg.sheet_name_51_stm),
+        "39": (cfg.spreadsheet_39, cfg.sheet_name_39),
     }
 
-    spreadsheet_id = sheet_map.get(sheet_key)
-
-    if not spreadsheet_id:
+    if sheet_key not in sheet_map:
         raise ValueError(f"Planilha inválida: {sheet_key}")
 
+    spreadsheet_id, sheet_name = sheet_map[sheet_key]
+    sheet_name = sheet_name.strip()
+
+    range_str = f"'{sheet_name}'!A{start_row}:ZZ"
     tentativas = 3
 
     for tentativa in range(tentativas):
@@ -61,33 +67,28 @@ def read_sheet_as_dataframe(sheet_key="60"):
                 .values()
                 .get(
                     spreadsheetId=spreadsheet_id,
-                    range=f"'{cfg.sheet_name}'"
+                    range=range_str
                 )
                 .execute()
             )
             break
         except HttpError as e:
-            # Proteção contra Google instável
             if e.resp.status in [429, 500, 503]:
                 if tentativa < tentativas - 1:
                     time.sleep(2 + tentativa)
                     continue
-                else:
-                    raise RuntimeError(
-                        "⚠️ Google Sheets temporariamente indisponível. Tente novamente em alguns segundos."
-                    )
-            else:
-                raise e
+                raise RuntimeError(
+                    "⚠️ Google Sheets temporariamente indisponível. Tente novamente."
+                )
+            raise e
 
     values = result.get("values", [])
 
-    if len(values) < 2:
+    if not values:
         return pd.DataFrame()
 
-    raw_headers = values[0]
+    headers = normalize_headers(values[0])
     rows = values[1:]
-
-    headers = normalize_headers(raw_headers)
     num_cols = len(headers)
 
     normalized_rows = [
@@ -101,7 +102,7 @@ def read_sheet_as_dataframe(sheet_key="60"):
 # ============================================================
 # Normalizador de cabeçalhos
 # ============================================================
-def normalize_headers(headers: list[str]) -> list[str]:
+def normalize_headers(headers: List[str]) -> List[str]:
     seen = {}
     normalized = []
 
