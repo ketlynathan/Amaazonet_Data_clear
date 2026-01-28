@@ -41,6 +41,7 @@ jobs:
           GOOGLE_SHEET_NAME_51=${{ secrets.GOOGLE_SHEET_NAME_51 }}
           GOOGLE_SHEET_NAME_51_STM=${{ secrets.GOOGLE_SHEET_NAME_51_STM }}
           GOOGLE_SHEET_NAME_60=${{ secrets.GOOGLE_SHEET_NAME_60 }}
+          GOOGLE_SHEET_NAME_60_VENDA=${{ secrets.GOOGLE_SHEET_NAME_60_VENDA }}
 
           AMAZONET_BASE_URL=${{ secrets.AMAZONET_BASE_URL }}
           AMAZONET_CARD_ID=${{ secrets.AMAZONET_CARD_ID }}
