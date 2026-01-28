@@ -27,7 +27,7 @@ def carregar_planilhas_financeiro():
 
     # Padroniza texto do tipo
     s60["tipo_vendedor"] = s60["tipo_vendedor"].astype(str).str.strip().str.upper()
-    s60["nome_autonomo"] = s60["nome_autonomo"].astype(str).str.strip()
+    s60["nome_vendedor"] = s60["nome_vendedor"].astype(str).str.strip()
     
 
 
