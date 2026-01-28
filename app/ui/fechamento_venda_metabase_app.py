@@ -75,7 +75,7 @@ def render_venda_metabase():
         st.subheader("🎛️ Filtros de Carga")
 
         contas = st.multiselect(
-            "Contas",
+            "conta",
             ["mania", "amazonet"],
             default=["mania"],
         )

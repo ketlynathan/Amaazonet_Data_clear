@@ -21,17 +21,14 @@ def render_relatorio_financeiro_vendas():
 
     resultados = aplicar_regras(df_base)
 
-    st.markdown("## 📦 Base Metabase")
-    st.dataframe(resultados["base"], use_container_width=True)
+    st.markdown("## 👤 Vendedores Autônomos (51 STM + 60)")
 
-    st.markdown("## 🟢 Resultado – Planilha 51 STM")
-    st.dataframe(resultados["51_STM"], use_container_width=True)
+    base_autonomos = resultados["autonomos"]
 
-    st.markdown("## 🔵 Resultado – Planilha 51")
-    st.dataframe(resultados["51"], use_container_width=True)
+    tipos = sorted(base_autonomos["tipo_vendedor"].unique())
+    tipo_escolhido = st.selectbox("Filtrar tipo de vendedor", tipos)
 
-    st.markdown("## 🟠 Resultado – Planilha 60")
-    st.dataframe(resultados["60"], use_container_width=True)
+    filtrado = base_autonomos[base_autonomos["tipo_vendedor"] == tipo_escolhido]
 
-    st.markdown("## 📊 Resumo Final")
-    st.dataframe(resultados["resumo"], use_container_width=True)
+    st.dataframe(filtrado, use_container_width=True)
+
