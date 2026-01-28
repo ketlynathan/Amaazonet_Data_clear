@@ -243,9 +243,8 @@ def render_relatorio_financeiro_instalacoes():
     # ======================================================
     tipo_relatorio = "Instalações"
 
-
     if st.button("📄 Gerar Relatório do Técnico"):
-        caminho = montar_tabela(
+        pdf_buffer = montar_tabela(  # agora retorna BytesIO
             df=auditoria_df,
             tecnico=nome_exibicao,
             empresa=conta,
@@ -255,12 +254,17 @@ def render_relatorio_financeiro_instalacoes():
             total_valor=total_final,
             logo_path=logo_path,
         )
-        with open(caminho, "rb") as f:
-            st.download_button("⬇️ Baixar PDF", f, file_name=Path(caminho).name, mime="application/pdf")
+
+        st.download_button(
+            "⬇️ Baixar PDF",
+            data=pdf_buffer,
+            file_name=f"Relatorio_{nome_exibicao}.pdf",
+            mime="application/pdf"
+        )
 
     if tecnico_selecionado.upper() != "NADINEI":
         if st.button("🧾 Gerar Recibo"):
-            caminho = gerar_recibo_pagamento(
+            pdf_buffer = gerar_recibo_pagamento(  # agora retorna BytesIO
                 tecnico=nome_exibicao,
                 empresa=conta,
                 valor_total=total_final,
@@ -268,5 +272,11 @@ def render_relatorio_financeiro_instalacoes():
                 data_pagamento=data_pagamento.strftime("%d/%m/%Y"),
                 tipo_servico=tipo_relatorio
             )
-            with open(caminho, "rb") as f:
-                st.download_button("⬇️ Baixar Recibo", f, file_name=Path(caminho).name, mime="application/pdf")
+
+            st.download_button(
+                "⬇️ Baixar Recibo",
+                data=pdf_buffer,
+                file_name=f"Recibo_{nome_exibicao}.pdf",
+                mime="application/pdf"
+            )
+

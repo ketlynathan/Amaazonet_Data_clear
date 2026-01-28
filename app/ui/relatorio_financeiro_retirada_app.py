@@ -193,14 +193,29 @@ def render_relatorio_financeiro_retirada():
 
     # PDFs
     if st.button("📄 Gerar Relatório"):
-        caminho = montar_tabela(auditoria_df, nome_exibicao, conta, data_inicio, data_fim, data_pagamento, total_final, None)
-        with open(caminho, "rb") as f:
-            st.download_button("⬇️ Baixar PDF", f, file_name=Path(caminho).name)
+        pdf_buffer = montar_tabela(
+            auditoria_df,
+            nome_exibicao,
+            conta,
+            data_inicio,
+            data_fim,
+            data_pagamento,
+            total_final,
+            None
+        )
+
+        st.download_button(
+            "⬇️ Baixar PDF",
+            data=pdf_buffer,
+            file_name=f"Relatorio_{nome_exibicao}.pdf",
+            mime="application/pdf"
+        )
+
 
     tipo_relatorio = "Retiradas"
-    
+
     if st.button("🧾 Gerar Recibo"):
-        caminho = gerar_recibo_pagamento(
+        pdf_buffer = gerar_recibo_pagamento(
             tecnico=nome_exibicao,
             empresa=conta,
             valor_total=total_final,
@@ -208,5 +223,11 @@ def render_relatorio_financeiro_retirada():
             data_pagamento=data_pagamento.strftime("%d/%m/%Y"),
             tipo_servico=tipo_relatorio
         )
-        with open(caminho, "rb") as f:
-            st.download_button("⬇️ Baixar Recibo", f, file_name=Path(caminho).name)
+
+        st.download_button(
+            "⬇️ Baixar Recibo",
+            data=pdf_buffer,
+            file_name=f"Recibo_{nome_exibicao}.pdf",
+            mime="application/pdf"
+        )
+
