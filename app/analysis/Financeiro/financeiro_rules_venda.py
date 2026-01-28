@@ -50,8 +50,7 @@ def aplicar_regras(df_base):
     base_autonomos = pd.concat(
         [
             s60_aut[colunas_padrao],
-            stm_aut[colunas_padrao],
-            
+            stm_aut[colunas_padrao]
         ],
         ignore_index=True
     )
@@ -62,7 +61,8 @@ def aplicar_regras(df_base):
 
     df_stm = df_base.merge(stm, on=["codigo_cliente", "numero_ordem_servico"], how="left")
     df_60 = df_base.merge(s60, on=["codigo_cliente", "numero_ordem_servico"], how="left")
-    
+    s60_aut["status"] = s60_aut["status_60"]
+    stm_aut["status"] = stm_aut["status_51_stm"]
 
 
     resumo = pd.DataFrame({
