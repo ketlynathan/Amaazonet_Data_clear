@@ -7,6 +7,8 @@ from app.analysis.Financeiro.financeiro_rules_retirada import carregar_planilha_
 from app.analysis.pdf.pdf_relatorio import montar_tabela
 from app.analysis.pdf.pdf_recibo import gerar_recibo_pagamento
 from app.utils.formatacao import limpar_nome_tecnico
+from app.utils.formatacao import carregar_logo_seguro
+
 
 
 # ========================= UTILITÁRIOS =========================

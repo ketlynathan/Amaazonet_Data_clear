@@ -2,6 +2,52 @@ import pandas as pd
 from pathlib import Path
 import re
 
+from reportlab.platypus import Image, Spacer
+from reportlab.lib.units import cm
+
+
+def carregar_logo_seguro(logo_path, largura=4.2*cm, altura=3.5*cm):
+    """
+    Carrega logo de forma segura. Se não encontrar, retorna um Spacer para não quebrar o PDF.
+    """
+    if not logo_path:
+        return Spacer(1, altura)
+
+    caminho = Path.cwd() / logo_path
+    if caminho.exists():
+        return Image(str(caminho), width=largura, height=altura)
+
+    print(f"⚠️ Logo não encontrada em: {caminho}")
+    return Spacer(1, altura)
+
+def get_dados_empresa(empresa: str):
+    empresa = (empresa or "").upper()
+
+    if "MANIA" in empresa:
+        return {
+            "nome": "MANIA TELECOM TELECOMUNICACOES LTDA",
+            "email": "contato@maniatelecom.com.br",
+            "logo": "app/img/mania.png",
+            "cor": "#2A7E9D",
+        }
+
+    elif "AMAZON" in empresa:
+        return {
+            "nome": "Amazonet Telecomunicações Ltda.",
+            "email": "contato@amazonett.com.br",
+            "logo": "app/img/amazonet.png",
+            "cor": "#413371",
+        }
+
+    else:
+        return {
+            "nome": empresa,
+            "email": "",
+            "logo": None,
+            "cor": "#1f4fd8",
+        }
+
+
 def limpar_nome_tecnico(nome):
     if not nome:
         return ""

@@ -5,10 +5,11 @@ from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.colors import black
+from reportlab.platypus import Image, Spacer
 from io import BytesIO
 import os
 import re
-from app.utils.formatacao import limpar_nome_tecnico
+from app.utils.formatacao import carregar_logo_seguro, limpar_nome_tecnico
 
 
 
@@ -18,6 +19,7 @@ def formatar_brl(valor):
         return f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except:
         return "0,00"
+    
 
 
 def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, total_valor, logo_path=None):
@@ -46,24 +48,28 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
     estilo_bold = ParagraphStyle("bold", parent=styles["Normal"], fontSize=10, fontName="Helvetica-Bold")
     estilo_tabela = ParagraphStyle("tabela", parent=styles["Normal"], fontSize=9, leading=11)
 
-    # =========================
-    # IDENTIDADE DA EMPRESA
-    # =========================
-    empresa_upper = empresa.upper()
+   # =========================
+   # IDENTIDADE DA EMPRESA
+   # =========================
+    empresa_upper = (empresa or "").upper()
 
     if "AMAZON" in empresa_upper:
         logo_path = "app/img/amazonet.png"
         cor_empresa = colors.HexColor("#413371")
+
     elif "MANIA" in empresa_upper:
         logo_path = "app/img/mania.png"
         cor_empresa = colors.HexColor("#2A7E9D")
+
     else:
+        logo_path = None
         cor_empresa = colors.HexColor("#1f4fd8")
 
+
     # =========================
-    # TOPO
+    # TOPO (LOGO SEGURO)
     # =========================
-    logo = Image(logo_path, width=4.2*cm, height=3.5*cm) if logo_path and os.path.exists(logo_path) else ""
+    logo = carregar_logo_seguro(logo_path, largura=4.2*cm, altura=3.5*cm)
 
     titulo = Paragraph(
         "RESUMO INSTALAÇÕES",
