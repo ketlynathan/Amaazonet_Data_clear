@@ -6,18 +6,29 @@ from reportlab.platypus import Image, Spacer
 from reportlab.lib.units import cm
 
 
-def carregar_logo_seguro(logo_path, largura=4.2*cm, altura=3.5*cm):
+def carregar_logo_seguro(logo_path: str, largura: float = 4.2*cm, altura: float = 3.5*cm):
     """
-    Carrega logo de forma segura. Se não encontrar, retorna um Spacer para não quebrar o PDF.
+    Carrega a logo de forma segura.
+    Funciona localmente, em produção e em Docker.
+    Se não encontrar a imagem, retorna um Spacer para não quebrar o PDF.
     """
     if not logo_path:
         return Spacer(1, altura)
 
-    caminho = Path.cwd() / logo_path
-    if caminho.exists():
-        return Image(str(caminho), width=largura, height=altura)
+    try:
+        # Caminho absoluto baseado neste arquivo Python
+        caminho_base = Path(__file__).resolve().parent.parent  # Ajuste se estiver em pasta utils/
+        caminho_logo = caminho_base / logo_path
 
-    print(f"⚠️ Logo não encontrada em: {caminho}")
+        if caminho_logo.exists():
+            return Image(str(caminho_logo), width=largura, height=altura)
+
+        print(f"⚠️ Logo não encontrada em: {caminho_logo}")
+
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar logo: {e}")
+
+    # Se algo falhar, retorna espaço vazio
     return Spacer(1, altura)
 
 def get_dados_empresa(empresa: str):
