@@ -12,6 +12,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib import colors
 from reportlab.lib.units import cm
 from pathlib import Path
+from io import BytesIO
 from num2words import num2words
 
 
@@ -60,20 +61,17 @@ def gerar_recibo_pagamento(
     if not valor_extenso.lower().endswith("reais"):
         valor_extenso += " reais"
 
-    output_dir = Path("output/recibos")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    nome_arquivo = f"RECIBO_{tecnico.replace(' ', '_')}.pdf"
-    caminho = output_dir / nome_arquivo
+    buffer = BytesIO()
 
     doc = SimpleDocTemplate(
-        str(caminho),
+        buffer,
         pagesize=A4,
         rightMargin=30,
         leftMargin=30,
         topMargin=30,
         bottomMargin=30,
     )
+
 
     styles = getSampleStyleSheet()
 
@@ -83,7 +81,7 @@ def gerar_recibo_pagamento(
         "valor",
         parent=styles["Normal"],
         fontSize=12,
-        fontName="Helvetica-Bold",
+        fooutntName="Helvetica-Bold",
         alignment=TA_RIGHT
     )
 
@@ -115,7 +113,9 @@ def gerar_recibo_pagamento(
         story.append(Spacer(1, 120))
 
     doc.build(story)
-    return str(caminho)
+    buffer.seek(0)
+    return buffer
+
 
 
 

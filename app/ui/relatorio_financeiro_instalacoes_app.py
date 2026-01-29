@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import timedelta
 from pathlib import Path
+from io import BytesIO
 from app.analysis.Financeiro.financeiro_rules_instalacao import aplicar_regras_financeiras
 from app.analysis.pdf.pdf_relatorio import montar_tabela
 from app.analysis.pdf.pdf_recibo import gerar_recibo_pagamento
@@ -256,11 +257,12 @@ def render_relatorio_financeiro_instalacoes():
         )
 
         st.download_button(
-            "⬇️ Baixar PDF",
-            data=pdf_buffer,
+            "⬇️ Baixar Relatório",
+            data=pdf_buffer.getvalue(),  # força bytes finais
             file_name=f"Relatorio_{nome_exibicao}.pdf",
             mime="application/pdf"
         )
+
 
     if tecnico_selecionado.upper() != "NADINEI":
         if st.button("🧾 Gerar Recibo"):
@@ -275,8 +277,9 @@ def render_relatorio_financeiro_instalacoes():
 
             st.download_button(
                 "⬇️ Baixar Recibo",
-                data=pdf_buffer,
+                data=pdf_buffer.getvalue(),  # força bytes finais
                 file_name=f"Recibo_{nome_exibicao}.pdf",
                 mime="application/pdf"
             )
+
 

@@ -5,17 +5,10 @@ from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.colors import black
+from io import BytesIO
 import os
 import re
 from app.utils.formatacao import limpar_nome_tecnico
-
-
-
-
-
-
-
-
 
 
 
@@ -31,11 +24,12 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
 
     tecnico = limpar_nome_tecnico(tecnico)
     nome_limpo = limpar_nome_tecnico(tecnico)
-    caminho_pdf = f"Resumo_{nome_limpo.replace(' ', '_')}.pdf"
+    
+    buffer = BytesIO()  # 🔥 cria PDF na memória
 
     doc = SimpleDocTemplate(
-        caminho_pdf,
-        pagesize= A4,
+        buffer,  # 🔥 usa o buffer em vez de caminho de arquivo
+        pagesize=A4,
         rightMargin=1.2 * cm,
         leftMargin=1.2 * cm,
         topMargin=1.2 * cm,
@@ -240,4 +234,5 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
     elementos.append(tabela)
     doc.build(elementos)
 
-    return caminho_pdf
+    buffer.seek(0)   # volta para o início do arquivo em memória
+    return buffer    # retorna o PDF pronto para download
