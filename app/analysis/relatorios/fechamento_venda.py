@@ -3,7 +3,6 @@ from typing import List
 import pandas as pd
 
 from app.analysis.ordens_servico import carregar_ordens_servico_df
-from app.analysis.relatorios.fechamento_venda import relatorio_fechamento_venda_df
 
 def relatorio_fechamento_venda_df(
     contas: List[str],

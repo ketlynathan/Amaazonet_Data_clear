@@ -4,83 +4,71 @@ from app.analysis.Financeiro.financeiro_sources import carregar_planilhas_financ
 from app.analysis.Financeiro.financeiro_utils import padronizar_campos_chave
 
 
+import unicodedata
+
 def normalizar_texto(texto):
-    if pd.isna(texto):
-        return ""
     texto = str(texto).strip().upper()
     texto = unicodedata.normalize("NFKD", texto).encode("ASCII", "ignore").decode("ASCII")
     return texto
+
+    base_autonomos["tipo_vendedor"] = base_autonomos["tipo_vendedor"].apply(normalizar_texto)
+    tipo_escolhido = normalizar_texto(tipo_escolhido)
+
+
+
+def garantir_colunas(df: pd.DataFrame, colunas: list[str]) -> pd.DataFrame:
+    for col in colunas:
+        if col not in df.columns:
+            df[col] = ""
+    return df
 
 
 def aplicar_regras(df_base):
     df_base = padronizar_campos_chave(df_base)
 
     s60, stm = carregar_planilhas_financeiro()
+    base_vendedores = pd.concat([s60, stm], ignore_index=True)
 
-    # =============================
-    # 🧹 PADRONIZA TIPOS DE VENDEDOR
-    # =============================
-
-    s60["tipo_vendedor"] = s60["tipo_vendedor"].apply(normalizar_texto)
-
-    # STM não tem tipo → forçamos como autônomo
-    stm["tipo_vendedor"] = "VENDEDOR AUTONOMO"
-
-    TIPOS_AUTONOMOS = [
-        "VENDEDOR AUTONOMO",
-        "VENDEDOR AUTONOMOS REGIONAIS",
-        "VENDEDOR AUTONOMO REGIONAIS",
-    ]
-
-    s60_aut = s60[s60["tipo_vendedor"].isin(TIPOS_AUTONOMOS)].copy()
-    stm_aut = stm.copy()
-
-    # =============================
-    # 🔗 BASE UNIFICADA DE AUTÔNOMOS
-    # =============================
-
-    colunas_padrao = [
-        "codigo_cliente",
-        "numero_ordem_servico",
-        "nome_autonomo",
-        "tipo_vendedor",
-        "status"
-    ]
-
-    base_autonomos = pd.concat(
-        [
-            s60_aut[colunas_padrao],
-            stm_aut[colunas_padrao]
-        ],
-        ignore_index=True
+    df = df_base.merge(
+        base_vendedores,
+        on=["codigo_cliente", "numero_ordem_servico"],
+        how="left"
     )
 
-    # =============================
-    # 🔎 CRUZAMENTOS ORIGINAIS
-    # =============================
+    # Status financeiro
+    df["status_auditoria"] = df["status_planilha"].fillna("").astype(str).str.strip().str.upper()
 
-    df_stm = df_base.merge(stm, on=["codigo_cliente", "numero_ordem_servico"], how="left")
-    df_60 = df_base.merge(s60, on=["codigo_cliente", "numero_ordem_servico"], how="left")
-    s60_aut["status"] = s60_aut["status_60"]
-    stm_aut["status"] = stm_aut["status_51_stm"]
+    def status_financeiro(status):
+        status = str(status).upper().strip()
+        return "PAGO" if status in ["APROVADO", "N.C APROVADO", "NC APROVADO"] else "-"
 
+    df["status_financeiro"] = df["status_planilha"].apply(status_financeiro)
 
-    resumo = pd.DataFrame({
-        "codigo_cliente": df_base["codigo_cliente"],
-        "numero_ordem_servico": df_base["numero_ordem_servico"],
-        "encontrado_51_stm": df_stm["status_51_stm"].notna(),
-        "encontrado_60": df_60["status_60"].notna(),
-    })
+    # Valor por vendedor
+    def valor_base(nome, tipo):
+        nome = normalizar_texto(nome)
+        tipo = normalizar_texto(tipo)
+        if "AUTONOMO" in tipo:
+            if "JOSIVAN" in nome:
+                return 60
+            return 50
+        return 0
 
-    resumo["origem_encontrada"] = (
-        resumo["encontrado_51_stm"].map({True: "51_STM", False: ""}) +
-        resumo["encontrado_60"].map({True: " 60", False: ""})
-    ).str.strip()
+    df["valor_base"] = df.apply(lambda r: valor_base(r["nome_vendedor"], r["tipo_vendedor"]), axis=1)
+    df["valor_a_pagar"] = df.apply(lambda r: r["valor_base"] if r["status_financeiro"] == "PAGO" else 0, axis=1)
+
+    total_por_vendedor = (
+        df.groupby("nome_vendedor", dropna=False)["valor_a_pagar"]
+        .sum()
+        .reset_index()
+        .sort_values("valor_a_pagar", ascending=False)
+    )
+
+    # ✅ FILTRA VENDEDORES AUTÔNOMOS
+    autonomos = df[df["tipo_vendedor"].str.upper().str.contains("AUTONOMO")].copy()
 
     return {
-        "base": df_base,
-        "51_STM": df_stm,
-        "60": df_60,
-        "autonomos": base_autonomos,   # 👈 NOVA BASE
-        "resumo": resumo
+        "base_completa": df,
+        "total_por_vendedor": total_por_vendedor,
+        "autonomos": autonomos  # <-- aqui está a chave que faltava
     }
