@@ -2,16 +2,16 @@ import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 
-import app
 from app.analysis.metabase_service import carregar_fechamento_metabase
 from app.ui.relatorio_financeiro_instalacoes_app import render_relatorio_financeiro_instalacoes
 
 
 # ======================================================
-# COLUNAS REAIS (JSON CONFIRMADO)
+# COLUNAS PADRÃO DA API
 # ======================================================
 COL_NUMERO = "numero_ordem_servico"
 COL_TECNICO = "usuario_fechamento"
+COL_USUARIO_ABERTURA = "usuario_abertura"
 COL_TIPO_OS = "tipo_ordem_servico"
 COL_DATA_FIM = "data_termino_executado"
 
@@ -23,8 +23,7 @@ TIPOS_OS_FECHAMENTO_POR_CONTA = {
         "INSTALAÇÃO (R$ 100,00)",
         "INSTALAÇÃO (R$ 49,90)",
         "INSTALAÇÃO GRÁTIS",
-        "MUDANÇA DE ENDEREÇO - R$ 50,00 - VALOR OBRIGATÓRIO: R$ 50.00",
-        "MUDANÇA DE ENDEREÇO - R$ 50,00",
+        "INSTALAÇÃO (R$ 50,00)"
     ],
     "mania": [
         "INSTALAÇÃO (R$ 20,00)",
@@ -35,8 +34,9 @@ TIPOS_OS_FECHAMENTO_POR_CONTA = {
     ],
 }
 
+
 # ======================================================
-# CACHE
+# CACHE DE DADOS
 # ======================================================
 @st.cache_data(ttl=900, show_spinner=False)
 def carregar_base(contas, data_inicio, data_fim):
@@ -45,12 +45,28 @@ def carregar_base(contas, data_inicio, data_fim):
     for conta in contas:
         df = carregar_fechamento_metabase(conta, data_inicio, data_fim)
         if not df.empty:
+            df["conta"] = conta
             dfs.append(df)
 
     if not dfs:
         return pd.DataFrame()
 
-    return pd.concat(dfs, ignore_index=True)
+    df_final = pd.concat(dfs, ignore_index=True)
+
+    # 🔒 GARANTE COLUNAS MESMO SE NÃO VIEREM NA API
+    for col in [COL_TECNICO, COL_USUARIO_ABERTURA, COL_DATA_FIM]:
+        if col not in df_final.columns:
+            df_final[col] = None
+
+    # 📅 Converte datas
+    df_final[COL_DATA_FIM] = pd.to_datetime(
+        df_final[COL_DATA_FIM],
+        format="%d/%m/%Y",
+        errors="coerce"
+    )
+
+    return df_final
+
 
 # ======================================================
 # APP
@@ -58,9 +74,6 @@ def carregar_base(contas, data_inicio, data_fim):
 def render_fechamento_metabase():
     st.title("📋 Fechamento Técnico – Metabase")
 
-    # =========================
-    # SESSION STATE
-    # =========================
     st.session_state.setdefault("df_base", pd.DataFrame())
     st.session_state.setdefault("carregado", False)
 
@@ -68,27 +81,22 @@ def render_fechamento_metabase():
     # SIDEBAR
     # =========================
     with st.sidebar:
-        st.subheader("🔎 Filtros base") 
-        contas = st.multiselect( 
-            "Contas", ["mania", "amazonet"], 
-            default=["amazonet", "mania"], )
+        st.subheader("🔎 Filtros base")
 
-        hoje = date.today() 
-        data_inicio = st.date_input( 
-            "Data início", 
-            hoje - timedelta(days=7), 
-            ) 
-        data_fim = st.date_input(
-             "Data fim", hoje, 
-             ) 
-        gerar = st.button("📊 Gerar relatório") 
-        
-        if "df_fechamento_filtrado" not in st.session_state: st.session_state["df_fechamento_filtrado"] = pd.DataFrame()
+        contas = st.multiselect(
+            "Contas",
+            ["mania", "amazonet"],
+            default=["amazonet", "mania"],
+        )
 
+        hoje = date.today()
+        data_inicio = st.date_input("Data início", hoje - timedelta(days=7))
+        data_fim = st.date_input("Data fim", hoje)
 
+        gerar = st.button("📊 Gerar relatório")
 
     # =========================
-    # CARREGAMENTO (SÓ NO BOTÃO)
+    # CARREGAMENTO
     # =========================
     if gerar:
         with st.spinner("🔄 Carregando dados do Metabase..."):
@@ -98,16 +106,12 @@ def render_fechamento_metabase():
             st.warning("Nenhum dado retornado pelo Metabase.")
             return
 
-        # 🔒 FILTRA TIPOS PERMITIDOS POR CONTA
+        # 🔒 FILTRA TIPOS DE OS PERMITIDOS
         tipos_permitidos = set()
         for conta in contas:
-            tipos_permitidos.update(
-                TIPOS_OS_FECHAMENTO_POR_CONTA[conta]
-            )
+            tipos_permitidos.update(TIPOS_OS_FECHAMENTO_POR_CONTA.get(conta, []))
 
-        df_base = df_base[
-            df_base[COL_TIPO_OS].isin(tipos_permitidos)
-        ]
+        df_base = df_base[df_base[COL_TIPO_OS].isin(tipos_permitidos)]
 
         st.session_state["df_base"] = df_base
         st.session_state["carregado"] = True
@@ -119,54 +123,39 @@ def render_fechamento_metabase():
     df_base = st.session_state["df_base"]
 
     # =========================
-    # FILTROS PÓS-CARGA
+    # FILTROS
     # =========================
     st.subheader("🎯 Filtros")
-
     col1, col2 = st.columns(2)
 
-    # ----------- TÉCNICO -----------
+    # 👷 TÉCNICO
     with col1:
-        st.markdown("### 👷 Técnico")
+        st.markdown("### 👷 Técnico que fechou")
 
-        busca = st.text_input(
-            "Buscar técnico",
-            placeholder="Ex: Lobatos, Silva, Moura",
-        )
+        busca_tecnico = st.text_input("Buscar técnico")
 
-        tecnicos = (
-            df_base[COL_TECNICO]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-        tecnicos.sort()
+        tecnicos = sorted(df_base[COL_TECNICO].dropna().astype(str).unique())
 
-        if busca:
-            tecnicos = [
-                t for t in tecnicos if busca.lower() in t.lower()
-            ]
+        if busca_tecnico:
+            tecnicos = [t for t in tecnicos if busca_tecnico.lower() in t.lower()]
 
-        filtro_tecnico = st.multiselect(
-            "Selecionar técnico(s)",
-            tecnicos,
-            default=tecnicos,
-        )
+        filtro_tecnico = st.multiselect("Selecionar técnico(s)", tecnicos, default=tecnicos)
 
-    # ----------- TIPO OS -----------
+    # 👤 USUÁRIO ABERTURA
     with col2:
-        st.markdown("### 🧾 Tipo de Ordem de Serviço")
+        st.markdown("### 👤 Usuário que abriu")
 
-        tipos_os = sorted(
-            df_base[COL_TIPO_OS].dropna().unique().tolist()
+        usuarios = sorted(df_base[COL_USUARIO_ABERTURA].dropna().astype(str).unique())
+
+        filtro_usuario_abertura = st.multiselect(
+            "Selecionar usuário(s)",
+            usuarios,
+            default=usuarios
         )
 
-        filtro_tipo_os = st.multiselect(
-            "Tipos de OS",
-            tipos_os,
-            default=tipos_os,
-        )
+    # 🧾 TIPO OS
+    tipos_os = sorted(df_base[COL_TIPO_OS].dropna().unique())
+    filtro_tipo_os = st.multiselect("Tipos de OS", tipos_os, default=tipos_os)
 
     # =========================
     # APLICA FILTROS
@@ -176,18 +165,22 @@ def render_fechamento_metabase():
     if filtro_tecnico:
         df = df[df[COL_TECNICO].isin(filtro_tecnico)]
 
+    if filtro_usuario_abertura:
+        df = df[df[COL_USUARIO_ABERTURA].isin(filtro_usuario_abertura)]
+
     if filtro_tipo_os:
         df = df[df[COL_TIPO_OS].isin(filtro_tipo_os)]
 
     st.success(f"✅ {len(df)} ordens encontradas")
 
     # =========================
-    # TABELA
+    # TABELA FINAL
     # =========================
     colunas_exibir = [
         "numero_ordem_servico",
         "tipo_ordem_servico",
         "usuario_fechamento",
+        "usuario_abertura",
         "nome_cliente",
         "codigo_cliente",
         "bairro",
@@ -199,30 +192,15 @@ def render_fechamento_metabase():
     ]
 
     colunas_exibir = [c for c in colunas_exibir if c in df.columns]
+    df_exibir = df[colunas_exibir].sort_values(COL_DATA_FIM, ascending=False)
 
-    df_exibir = df[colunas_exibir]
-
-    if COL_DATA_FIM in df_exibir.columns:
-        df_exibir = df_exibir.sort_values(
-            COL_DATA_FIM, ascending=False
-        )
-
-    st.dataframe(
-        df_exibir,
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(df_exibir, use_container_width=True, hide_index=True)
 
     # =====================================
-    # DF FINAL (APÓS TODOS OS FILTROS)
+    # DISPONIBILIZA PARA O FINANCEIRO
     # =====================================
-    df_final = df.copy()
+    st.session_state["df_fechamento_filtrado"] = df.copy()
 
-    # 🔗 DISPONIBILIZA PARA O FINANCEIRO
-    st.session_state["df_fechamento_filtrado"] = df_final
-
-    if not df_final.empty:
-        st.markdown("---")
+    if not df.empty:
         st.markdown("---")
         render_relatorio_financeiro_instalacoes()
-
