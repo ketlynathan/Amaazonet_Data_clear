@@ -43,12 +43,46 @@ def st_card(texto, tamanho=16, padding=10, largura="100%", bg=None, color=None):
 # ========================= CARREGAMENTO E PREPARO =========================
 def preparar_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df["data_termino_executado"] = pd.to_datetime(
-        df["data_termino_executado"], dayfirst=True, errors="coerce"
-    )
-    df["estado"] = df.get("dados_endereco_instalacao.estado", "").fillna("").astype(str).str.upper().str.strip()
+
+    # 📅 Converter datas
+    if "data_termino_executado" in df.columns:
+        df["data_termino_executado"] = pd.to_datetime(
+            df["data_termino_executado"],
+            dayfirst=True,
+            errors="coerce"
+        )
+    else:
+        df["data_termino_executado"] = pd.NaT
+
+    # 🌎 ESTADO VINDO DA CIDADE (já que API não manda estado)
+    MAPA_CIDADE_ESTADO = {
+        "MANAUS": "AM",
+        "ITACOATIARA": "AM",
+        "PARINTINS": "AM",
+        "MANACAPURU": "AM",
+        "BELÉM": "PA",
+        "ANANINDEUA": "PA",
+        "SANTARÉM": "PA",
+    }
+
+    if "cidade" in df.columns:
+        df["estado"] = (
+            df["cidade"]
+            .fillna("")
+            .astype(str)
+            .str.upper()
+            .str.strip()
+            .map(MAPA_CIDADE_ESTADO)
+            .fillna("")
+        )
+    else:
+        df["estado"] = ""
+
+    # 🔑 Criar chave única
     df["chave"] = criar_chave(df)
+
     return df
+
 
 
 def carregar_sheet_39(data_pagamento, tecnico_exibicao=None) -> pd.DataFrame:

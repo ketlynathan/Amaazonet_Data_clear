@@ -15,7 +15,7 @@ from app.ui.ordens_servico_app import render_ordens_servico
 from app.ui.usuarios_app import render_usuarios
 from app.ui.relatorio_planilha_app import render_planilha
 from app.ui.debug_financeiro_app import render_debug_sheets
-from app.ui.fechamento_tecnicos_app import render
+from app.ui.naoUsado.fechamento_tecnicos_app import render
 from app.ui.qualidade_app import render_qualidade
 from app.ui.BackOffice_app import render_60_vendas
 

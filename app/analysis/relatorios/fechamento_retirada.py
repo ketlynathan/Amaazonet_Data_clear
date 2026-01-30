@@ -2,71 +2,55 @@ from datetime import date
 from typing import List
 import pandas as pd
 
-from app.analysis.ordens_servico import carregar_ordens_servico_df
-from app.analysis.relatorios.fechamento_tecnicos import relatorio_fechamento_tecnicos_df
 
-def relatorio_fechamento_retirada_df(
-    contas: List[str],
-    data_inicio: date,
-    data_fim: date,
-    estados: List[str],
-) -> pd.DataFrame:
+
+import pandas as pd
+
+
+def relatorio_fechamento_retirada_df(df_metabase: pd.DataFrame) -> pd.DataFrame:
     """
-    Retorna ordens de serviço com término executado no período,
-    respeitando contas e estados (modelo real HubSoft).
+    Trata os dados de fechamento de retiradas vindos do Metabase.
+    NÃO consulta HubSoft.
+    NÃO usa conta.
+    NÃO chama API.
     """
 
-    dfs: list[pd.DataFrame] = []
-
-    estados_upper = [
-        e.strip().upper()
-        for e in estados
-        if isinstance(e, str) and e.strip()
-    ]
-
-    for conta in contas:
-        df = carregar_ordens_servico_df(
-            conta=conta,
-            data_inicio=data_inicio,
-            data_fim=data_fim,
-            tipo_data="data_termino_executado",
-        )
-
-        if df is None or df.empty:
-            continue
-
-        # =========================
-        # GARANTIA DE FECHAMENTO
-        # =========================
-        if "data_termino_executado" in df.columns:
-            df = df[df["data_termino_executado"].notna()]
-
-        # =========================
-        # FILTRO DE ESTADO (SE EXISTIR)
-        # =========================
-        if estados_upper and "dados_endereco_instalacao.estado" in df.columns:
-            df["dados_endereco_instalacao.estado"] = (
-                df["dados_endereco_instalacao.estado"]
-                .astype(str)
-                .str.upper()
-            )
-
-            df = df[
-                df["dados_endereco_instalacao.estado"]
-                .isin(estados_upper)
-            ]
-
-        if df.empty:
-            continue
-
-        # =========================
-        # CONTROLE DE ORIGEM
-        # =========================
-        df["conta"] = conta.upper()
-
-        dfs.append(df)
-
-    if not dfs:
+    if df_metabase is None or df_metabase.empty:
         return pd.DataFrame()
 
-    return pd.concat(dfs, ignore_index=True)
+    df = df_metabase.copy()
+
+    # =========================
+    # GARANTE COLUNAS IMPORTANTES
+    # =========================
+    colunas_necessarias = [
+        "numero_ordem_servico",
+        "usuario_fechamento",
+        "tipo_ordem_servico",
+        "data_termino_executado",
+        "nome_cliente",
+        "cidade",
+        "bairro",
+        "codigo_cliente",
+        "motivo_fechamento",
+    ]
+
+    for col in colunas_necessarias:
+        if col not in df.columns:
+            df[col] = None
+
+    # =========================
+    # GARANTE QUE É OS FECHADA
+    # =========================
+    df = df[df["data_termino_executado"].notna()]
+
+    # =========================
+    # CONVERSÃO DE DATA
+    # =========================
+    df["data_termino_executado"] = pd.to_datetime(
+        df["data_termino_executado"],
+        dayfirst=True,
+        errors="coerce",
+    )
+
+    return df

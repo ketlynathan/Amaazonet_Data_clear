@@ -2,12 +2,12 @@ import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 
-from app.analysis.google_sheets import read_sheet_as_dataframe
+from app.analysis.metabase_service import carregar_fechamento_metabase
 from app.analysis.relatorios.fechamento_retirada import relatorio_fechamento_retirada_df
 from app.ui.relatorio_financeiro_retirada_app import render_relatorio_financeiro_retirada
-from app.analysis.Financeiro.financeiro_rules_retirada import aplicar_regras_financeiras, carregar_planilha_39
+
 # ======================================================
-# COLUNAS REAIS (JSON CONFIRMADO)
+# COLUNAS PADRÃO
 # ======================================================
 COL_NUMERO = "numero_ordem_servico"
 COL_TECNICO = "usuario_fechamento"
@@ -20,30 +20,66 @@ TIPOS_OS_FECHAMENTO_POR_CONTA = {
 }
 
 # ======================================================
-# CACHE
+# FUNÇÕES AUXILIARES
 # ======================================================
-# ou o nome real da sua função que já buscava no Metabase
+def garantir_colunas(df: pd.DataFrame) -> pd.DataFrame:
+    colunas_necessarias = [
+        COL_NUMERO, COL_TECNICO, COL_TIPO_OS, COL_DATA_FIM,
+        "nome_cliente", "cidade", "bairro", "codigo_cliente",
+        "motivo_fechamento", "conta"
+    ]
+    for col in colunas_necessarias:
+        if col not in df.columns:
+            df[col] = None
+    return df
 
+
+def normalizar_datas(df: pd.DataFrame) -> pd.DataFrame:
+    if COL_DATA_FIM in df.columns:
+        df[COL_DATA_FIM] = pd.to_datetime(
+            df[COL_DATA_FIM], dayfirst=True, errors="coerce"
+        )
+    return df
+
+
+# ======================================================
+# CACHE METABASE
+# ======================================================
 @st.cache_data(ttl=900, show_spinner=False)
 def carregar_base(contas, data_inicio, data_fim) -> pd.DataFrame:
     dfs = []
 
     for conta in contas:
-        df = relatorio_fechamento_retirada_df(conta, data_inicio, data_fim)
-        if df is not None and not df.empty:
-            dfs.append(df)
+        # 🔽 BUSCA DIRETO DO METABASE
+        df_metabase = carregar_fechamento_metabase(conta, data_inicio, data_fim)
+
+        if df_metabase is None or df_metabase.empty:
+            continue
+
+        # 🔽 TRATAMENTO (SEM HUBSOFT)
+        df_tratado = relatorio_fechamento_retirada_df(df_metabase)
+
+        if df_tratado.empty:
+            continue
+
+        df_tratado["conta"] = conta
+        dfs.append(df_tratado)
 
     if not dfs:
         return pd.DataFrame()
 
-    return pd.concat(dfs, ignore_index=True)
+    df_final = pd.concat(dfs, ignore_index=True)
+    df_final = garantir_colunas(df_final)
+    df_final = normalizar_datas(df_final)
+
+    return df_final
 
 
 # ======================================================
 # APP
 # ======================================================
 def render_retirada_metabase():
-    st.title("📋 Fechamento Técnico – Metabase")
+    st.title("📋 Fechamento Técnico – Retiradas (Metabase)")
 
     st.session_state.setdefault("df_base", pd.DataFrame())
     st.session_state.setdefault("carregado", False)
@@ -64,24 +100,23 @@ def render_retirada_metabase():
         data_fim = st.date_input("Data fim", hoje)
 
         gerar = st.button("📊 Gerar relatório")
-
-        if "df_fechamento_filtrado" not in st.session_state:
-            st.session_state["df_fechamento_filtrado"] = pd.DataFrame()
+        st.session_state.setdefault("df_fechamento_filtrado", pd.DataFrame())
 
     # =========================
     # CARREGAMENTO
     # =========================
     if gerar:
-        with st.spinner("🔄 Carregando dados do Metabase..."):
+        with st.spinner("🔄 Buscando dados no Metabase..."):
             df_base = carregar_base(contas, data_inicio, data_fim)
 
         if df_base.empty:
-            st.warning("Nenhum dado retornado pelo Metabase.")
+            st.warning("Nenhuma retirada encontrada no período.")
             return
 
+        # 🔒 Filtra tipos de OS válidos por conta
         tipos_permitidos = set()
         for conta in contas:
-            tipos_permitidos.update(TIPOS_OS_FECHAMENTO_POR_CONTA[conta])
+            tipos_permitidos.update(TIPOS_OS_FECHAMENTO_POR_CONTA.get(conta, []))
 
         df_base = df_base[df_base[COL_TIPO_OS].isin(tipos_permitidos)]
 
@@ -103,7 +138,10 @@ def render_retirada_metabase():
 
     with col1:
         busca = st.text_input("Buscar técnico")
-        tecnicos = sorted(df_base[COL_TECNICO].dropna().astype(str).unique())
+
+        tecnicos = sorted(
+            df_base[COL_TECNICO].dropna().astype(str).unique()
+        )
 
         if busca:
             tecnicos = [t for t in tecnicos if busca.lower() in t.lower()]
@@ -124,11 +162,14 @@ def render_retirada_metabase():
 
     st.success(f"✅ {len(df)} ordens encontradas")
 
-
     # =========================
     # TABELA
     # =========================
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.dataframe(
+        df.sort_values(COL_DATA_FIM, ascending=False),
+        use_container_width=True,
+        hide_index=True
+    )
 
     # =====================================
     # ENVIA PARA O FINANCEIRO

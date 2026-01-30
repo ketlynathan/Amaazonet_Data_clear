@@ -1,11 +1,11 @@
 import streamlit as st
 from app.ui.components.navigation import botao_voltar_home
 
-from app.ui.fechamento_tecnicos_app import render 
+from app.ui.naoUsado.fechamento_tecnicos_app import render 
 from app.ui.fechamento_tecnicos_metabase_app import render_fechamento_metabase
 
 from app.ui.fechamento_retirada_metabase_app import render_retirada_metabase
-from app.ui.fechamento_retirada_app import render_retirada
+from app.ui.naoUsado.fechamento_retirada_app import render_retirada
 from app.ui.fechamento_venda_metabase_app import render_venda_metabase
 
 def render_relatorios():
@@ -62,15 +62,11 @@ def render_relatorios():
         # ======================================================
         if subtela == "tecnico":
             st.markdown("### 📋 Fechamento Técnico")
-            cols = st.columns(2, gap="medium")
+            cols = st.columns(1, gap="medium")
 
             with cols[0]:
                 if st.button("Metabase", use_container_width=True):
                     st.session_state["tecnico_tipo"] = "metabase"
-
-            with cols[1]:
-                if st.button("Hubsoft", use_container_width=True):
-                    st.session_state["tecnico_tipo"] = "local"
 
             tecnico_tipo = st.session_state.get("tecnico_tipo")
 
@@ -78,33 +74,23 @@ def render_relatorios():
                 with st.spinner("Carregando Fechamento Técnico (Metabase)..."):
                     render_fechamento_metabase()
 
-            elif tecnico_tipo == "local":
-                with st.spinner("Carregando Fechamento Técnico (Hubsoft)..."):
-                    render()
 
         # ======================================================
         # FECHAMENTO RETIRADA
         # ======================================================
         elif subtela == "retirada":
             st.markdown("### 📦 Fechamento Retirada")
-            cols = st.columns(2, gap="medium")
+            cols = st.columns(1, gap="medium")
 
             with cols[0]:
                 if st.button("Metabase", use_container_width=True):
                     st.session_state["retirada_tipo"] = "metabase"
 
-            with cols[1]:
-                if st.button("Hubsoft", use_container_width=True):
-                    st.session_state["retirada_tipo"] = "local"
             retirada_tipo = st.session_state.get("retirada_tipo")
 
             if retirada_tipo == "metabase":
                 with st.spinner("Carregando Fechamento Retirada (Metabase)..."):
                     render_retirada_metabase()
-
-            elif retirada_tipo == "local":
-                with st.spinner("Carregando Fechamento Retirada (Hubsoft)..."):
-                    render_retirada()
 
         
 
