@@ -1,74 +1,67 @@
+# app/analysis/Financeiro/financeiro_rules_venda.py
 import pandas as pd
-import unicodedata
 from app.analysis.Financeiro.financeiro_sources import carregar_planilhas_financeiro
-from app.analysis.Financeiro.financeiro_utils import padronizar_campos_chave
 
-
-import unicodedata
-
-def normalizar_texto(texto):
-    texto = str(texto).strip().upper()
-    texto = unicodedata.normalize("NFKD", texto).encode("ASCII", "ignore").decode("ASCII")
-    return texto
-
-    base_autonomos["tipo_vendedor"] = base_autonomos["tipo_vendedor"].apply(normalizar_texto)
-    tipo_escolhido = normalizar_texto(tipo_escolhido)
-
-
-
-def garantir_colunas(df: pd.DataFrame, colunas: list[str]) -> pd.DataFrame:
-    for col in colunas:
-        if col not in df.columns:
-            df[col] = ""
-    return df
-
-
-def aplicar_regras(df_base):
-    df_base = padronizar_campos_chave(df_base)
-
+def aplicar_regras_relatorio(df_base: pd.DataFrame) -> pd.DataFrame:
+    """
+    Retorna DataFrame consolidado com:
+    EMPRESA | CÓDIGO CLIENTE | CÓD O.S | TÉCNICO | TIPO_VENDEDOR | STATUS | FINANCEIRO | VALOR
+    """
     s60, stm = carregar_planilhas_financeiro()
-    base_vendedores = pd.concat([s60, stm], ignore_index=True)
 
-    df = df_base.merge(
-        base_vendedores,
-        on=["codigo_cliente", "numero_ordem_servico"],
-        how="left"
+    # Padroniza colunas do fechamento base
+    df_base = df_base.copy()
+    df_base["CÓDIGO CLIENTE"] = df_base["codigo_cliente"].astype(str).str.strip()
+    df_base["CÓD O.S"] = df_base["numero_ordem_servico"].astype(str).str.strip()
+    df_base["EMPRESA"] = df_base.get("conta", "").str.upper()
+
+    # Padroniza planilha 60
+    s60_renamed = s60.rename(columns={
+        "codigo_cliente": "CÓDIGO CLIENTE",
+        "numero_ordem_servico": "CÓD O.S",
+        "nome_vendedor": "TÉCNICO",
+        "tipo_vendedor": "TIPO_VENDEDOR",
+        "status_planilha": "STATUS"
+    })
+    s60_renamed["FINANCEIRO"] = s60_renamed["STATUS"].apply(
+        lambda x: "PAGO" if x in ["APROVADO", "N.C APROVADO"] else "-"
+    )
+    s60_renamed["VALOR"] = s60_renamed["FINANCEIRO"].apply(lambda x: 50 if x == "PAGO" else 0)
+    s60_renamed["EMPRESA_PLANILHA"] = "60"
+
+    # Padroniza planilha 51_STM
+    stm_renamed = stm.rename(columns={
+        "codigo_cliente": "CÓDIGO CLIENTE",
+        "numero_ordem_servico": "CÓD O.S",
+        "nome_vendedor": "TÉCNICO",
+        "tipo_vendedor": "TIPO_VENDEDOR",
+        "status_planilha": "STATUS"
+    })
+    stm_renamed["FINANCEIRO"] = stm_renamed["STATUS"].apply(
+        lambda x: "PAGO" if x in ["APROVADO", "N.C APROVADO"] else "-"
+    )
+    stm_renamed["VALOR"] = stm_renamed["FINANCEIRO"].apply(lambda x: 50 if x == "PAGO" else 0)
+    stm_renamed["EMPRESA_PLANILHA"] = "51_STM"
+
+    # Concatena planilhas
+    planilhas = pd.concat([s60_renamed, stm_renamed], ignore_index=True)
+
+    # Merge com fechamento
+    df_relatorio = df_base.merge(
+        planilhas,
+        on=["CÓDIGO CLIENTE", "CÓD O.S"],
+        how="left",
+        suffixes=("", "_planilha")
     )
 
-    # Status financeiro
-    df["status_auditoria"] = df["status_planilha"].fillna("").astype(str).str.strip().str.upper()
+    # Preenche OS não encontradas
+    df_relatorio["STATUS"].fillna("-", inplace=True)
+    df_relatorio["FINANCEIRO"].fillna("-", inplace=True)
+    df_relatorio["VALOR"].fillna(0, inplace=True)
+    df_relatorio["TIPO_VENDEDOR"].fillna("-", inplace=True)
 
-    def status_financeiro(status):
-        status = str(status).upper().strip()
-        return "PAGO" if status in ["APROVADO", "N.C APROVADO", "NC APROVADO"] else "-"
+    # Ordena e index sequencial
+    df_relatorio = df_relatorio.sort_values(["EMPRESA", "CÓDIGO CLIENTE", "CÓD O.S"]).reset_index(drop=True)
+    df_relatorio.index = df_relatorio.index + 1
 
-    df["status_financeiro"] = df["status_planilha"].apply(status_financeiro)
-
-    # Valor por vendedor
-    def valor_base(nome, tipo):
-        nome = normalizar_texto(nome)
-        tipo = normalizar_texto(tipo)
-        if "AUTONOMO" in tipo:
-            if "JOSIVAN" in nome:
-                return 60
-            return 50
-        return 0
-
-    df["valor_base"] = df.apply(lambda r: valor_base(r["nome_vendedor"], r["tipo_vendedor"]), axis=1)
-    df["valor_a_pagar"] = df.apply(lambda r: r["valor_base"] if r["status_financeiro"] == "PAGO" else 0, axis=1)
-
-    total_por_vendedor = (
-        df.groupby("nome_vendedor", dropna=False)["valor_a_pagar"]
-        .sum()
-        .reset_index()
-        .sort_values("valor_a_pagar", ascending=False)
-    )
-
-    # ✅ FILTRA VENDEDORES AUTÔNOMOS
-    autonomos = df[df["tipo_vendedor"].str.upper().str.contains("AUTONOMO")].copy()
-
-    return {
-        "base_completa": df,
-        "total_por_vendedor": total_por_vendedor,
-        "autonomos": autonomos  # <-- aqui está a chave que faltava
-    }
+    return df_relatorio
