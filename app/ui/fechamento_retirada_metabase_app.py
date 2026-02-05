@@ -132,11 +132,11 @@ def render_retirada_metabase():
     # =========================
     # FILTROS
     # =========================
-    
     st.subheader("🎯 Filtros")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
+    # 🔹 COLUNA ESQUERDA
     with col1:
         busca = st.text_input("Buscar técnico")
 
@@ -149,28 +149,52 @@ def render_retirada_metabase():
 
         filtro_tecnico = st.multiselect("Técnico", tecnicos, default=tecnicos)
 
-    with col2:
         tipos_os = sorted(df_base[COL_TIPO_OS].dropna().unique())
         filtro_tipo_os = st.multiselect("Tipo OS", tipos_os, default=tipos_os)
 
-    with col3:
+
+
+        
+
+    # 🔹 COLUNA DIREITA
+    with col2:
+
         tipos_fechamento = sorted(df_base["motivo_fechamento"].dropna().unique())
         filtro_tipo_fechamento = st.multiselect(
-            "motivo_fechamento",
+            "Motivo do Fechamento",
             tipos_fechamento,
             default=tipos_fechamento
         )
+        
 
+        # 🔽 CIDADE ABAIXO DO TÉCNICO
+        cidades = sorted(df_base["cidade"].dropna().astype(str).unique())
+        filtro_cidade = st.multiselect(
+            "Cidade",
+            cidades,
+            default=cidades
+        )
+
+        
+
+    # =========================
+    # APLICA FILTROS
+    # =========================
     df = df_base.copy()
 
     if filtro_tecnico:
         df = df[df[COL_TECNICO].isin(filtro_tecnico)]
+
+    if filtro_cidade:
+        df = df[df["cidade"].isin(filtro_cidade)]
 
     if filtro_tipo_os:
         df = df[df[COL_TIPO_OS].isin(filtro_tipo_os)]
 
     if filtro_tipo_fechamento:
         df = df[df["motivo_fechamento"].isin(filtro_tipo_fechamento)]
+
+
 
 
 
