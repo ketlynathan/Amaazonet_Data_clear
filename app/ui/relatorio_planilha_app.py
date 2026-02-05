@@ -104,6 +104,11 @@ def render_planilha():
     from io import BytesIO
 
     def to_excel_bytes(df: pd.DataFrame) -> bytes:
+        try:
+            import openpyxl  # garante que existe
+        except ImportError:
+            raise RuntimeError("openpyxl não está instalado no ambiente")
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False, sheet_name="Relatorio")
