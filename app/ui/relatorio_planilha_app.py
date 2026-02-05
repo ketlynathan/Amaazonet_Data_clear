@@ -101,8 +101,31 @@ def render_planilha():
     if estado:
         df_f = df_f[df_f["MINHA VENDA É PARA:"].isin(estado)]
 
+    from io import BytesIO
+
+    def to_excel_bytes(df: pd.DataFrame) -> bytes:
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Relatorio")
+        return output.getvalue()
+
+
     # =========================
     # VISUALIZAÇÃO
     # =========================
     st.dataframe(df_f, use_container_width=True)
     st.caption(f"🔢 {len(df_f)} registros filtrados")
+
+    # =========================
+    # DOWNLOAD EXCEL
+    # =========================
+    if not df_f.empty:
+        excel_bytes = to_excel_bytes(df_f)
+
+        st.download_button(
+            label="⬇️ Baixar relatório em Excel",
+            data=excel_bytes,
+            file_name="relatorio_planilha_autonomos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
