@@ -31,6 +31,7 @@ TIPOS_OS_FECHAMENTO_POR_CONTA = {
         "MUDANÇA DE ENDEREÇO",
         "INSTALAÇÃO WI-FI+ (R$ 20,00)",
         "INSTALAÇÃO (R$ 100,00)",
+        "INSTALAÇÃO GRÁTIS",
     ],
 }
 
