@@ -132,9 +132,10 @@ def render_retirada_metabase():
     # =========================
     # FILTROS
     # =========================
+    
     st.subheader("🎯 Filtros")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         busca = st.text_input("Buscar técnico")
@@ -152,6 +153,14 @@ def render_retirada_metabase():
         tipos_os = sorted(df_base[COL_TIPO_OS].dropna().unique())
         filtro_tipo_os = st.multiselect("Tipo OS", tipos_os, default=tipos_os)
 
+    with col3:
+        tipos_fechamento = sorted(df_base["motivo_fechamento"].dropna().unique())
+        filtro_tipo_fechamento = st.multiselect(
+            "motivo_fechamento",
+            tipos_fechamento,
+            default=tipos_fechamento
+        )
+
     df = df_base.copy()
 
     if filtro_tecnico:
@@ -160,7 +169,10 @@ def render_retirada_metabase():
     if filtro_tipo_os:
         df = df[df[COL_TIPO_OS].isin(filtro_tipo_os)]
 
-    st.success(f"✅ {len(df)} ordens encontradas")
+    if filtro_tipo_fechamento:
+        df = df[df["motivo_fechamento"].isin(filtro_tipo_fechamento)]
+
+
 
     # =========================
     # TABELA

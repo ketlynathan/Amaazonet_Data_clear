@@ -22,7 +22,17 @@ def formatar_brl(valor):
     
 
 
-def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, total_valor, logo_path=None):
+def montar_tabela(
+    df,
+    tecnico,
+    empresa,
+    data_inicio,
+    data_fim,
+    data_pagamento,
+    total_valor,
+    tipo_servico,   # 👈 NOVO
+    logo_path=None
+):
 
     tecnico = limpar_nome_tecnico(tecnico)
     nome_limpo = limpar_nome_tecnico(tecnico)
@@ -69,10 +79,26 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
     # =========================
     # TOPO (LOGO SEGURO)
     # =========================
+    tipo = str(tipo_servico).strip().lower()
+
+    mapa_titulos = {
+        "instalações": "RESUMO INSTALAÇÕES",
+        "instalacoes": "RESUMO INSTALAÇÕES",
+        "retirada": "RESUMO RETIRADAS",
+        "retiradas": "RESUMO RETIRADAS",
+        "venda": "RESUMO VENDAS",
+        "vendas": "RESUMO VENDAS",
+        "suporte": "RESUMO SUPORTE",
+    }
     logo = carregar_logo_seguro(logo_path, largura=4.2*cm, altura=3.5*cm)
 
+    titulo_texto = mapa_titulos.get(
+        str(tipo_servico).lower(),
+        f"RESUMO {str(tipo_servico).upper()}"
+    )
+
     titulo = Paragraph(
-        "RESUMO INSTALAÇÕES",
+        titulo_texto,
         ParagraphStyle(
             "Titulo",
             parent=styles["Normal"],
@@ -82,6 +108,7 @@ def montar_tabela(df, tecnico, empresa, data_inicio, data_fim, data_pagamento, t
             alignment=TA_CENTER
         )
     )
+    
     
     tabela_topo = Table(
     [[logo, titulo, ""]],

@@ -184,19 +184,6 @@ def render_relatorio_financeiro_retirada():
     col1.info(f"📄 OS na Planilha: **{len(chaves_planilha)}**")
     col2.info(f"🖥️ OS no Relatório: **{len(chaves_relatorio)}**")
 
-    if so_planilha:
-        st.error(f"🚨 {len(so_planilha)} OS estão na Planilha mas NÃO estão no Relatório")
-        with st.expander("Ver OS somente na Planilha"):
-            st.write(sorted(list(so_planilha)))
-
-    if so_relatorio:
-        st.warning(f"⚠️ {len(so_relatorio)} OS estão no Relatório mas NÃO estão na Planilha")
-        with st.expander("Ver OS somente no Relatório"):
-            st.write(sorted(list(so_relatorio)))
-
-    if not so_planilha and not so_relatorio:
-        st.success("✅ Planilha 39 e Relatório estão alinhados.")
-
     # Totais
     df["valor_a_pagar"] = pd.to_numeric(df["valor_a_pagar"], errors="coerce").fillna(0)
     total_final = df["valor_a_pagar"].sum()
@@ -226,7 +213,8 @@ def render_relatorio_financeiro_retirada():
     auditoria_df.insert(0, "Nº", auditoria_df.index + 1)
     st.dataframe(auditoria_df, use_container_width=True)
     st.success(f"💰 Total a pagar: R$ {total_final:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-
+    
+    tipo_relatorio = "retirada"
     # PDFs
     if st.button("📄 Gerar Relatório"):
         pdf_buffer = montar_tabela(
@@ -237,7 +225,8 @@ def render_relatorio_financeiro_retirada():
             data_fim,
             data_pagamento,
             total_final,
-            None
+            tipo_servico=tipo_relatorio,
+            logo_path=carregar_logo_seguro(conta)
         )
 
         st.download_button(
@@ -248,7 +237,7 @@ def render_relatorio_financeiro_retirada():
         )
 
 
-    tipo_relatorio = "Retiradas"
+    
 
     if st.button("🧾 Gerar Recibo"):
         pdf_buffer = gerar_recibo_pagamento(
