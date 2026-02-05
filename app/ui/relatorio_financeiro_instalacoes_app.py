@@ -266,7 +266,7 @@ def render_relatorio_financeiro_instalacoes():
         )
 
 
-    if tecnico_selecionado.upper() != "NADINEI":
+    
         if st.button("🧾 Gerar Recibo"):
             pdf_buffer = gerar_recibo_pagamento(  # agora retorna BytesIO
                 tecnico=nome_exibicao,
