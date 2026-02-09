@@ -9,7 +9,7 @@ def carregar_ordens_servico_df(
     conta: str,
     data_inicio: date,
     data_fim: date,
-    tipo_data: str = "data_cadastro",
+    tipo_data: str = "data_termino_executado",
     itens_por_pagina: int = 100,
     max_paginas: int = 50,  # limite de segurança
     tecnico: Optional[str] = None,
@@ -101,9 +101,9 @@ def carregar_ordens_servico_df(
     # -------------------------
     # DATAS
     # -------------------------
-    if "data_cadastro" in df.columns:
-        df["data_cadastro"] = pd.to_datetime(
-            df["data_cadastro"], errors="coerce"
+    if "data_termino_executado" in df.columns:
+        df["data_termino_executado"] = pd.to_datetime(
+            df["data_termino_executado"], errors="coerce"
         )
 
     if "data_fechamento" in df.columns:
