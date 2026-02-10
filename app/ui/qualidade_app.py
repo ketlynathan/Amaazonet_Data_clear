@@ -2,29 +2,37 @@ import streamlit as st
 import pandas as pd
 from datetime import date, timedelta
 
-from app.analysis.ordens_servico import carregar_ordens_servico_df
+from app.analysis.metabase_service import carregar_fechamento_metabase
+from app.ui.auditoria_app import render_auditoria
 from app.ui.components.navigation import botao_voltar_home
 
 # ======================================================
-# CONSTANTES DE COLUNAS
+# UNIDADES (AM / PA)
 # ======================================================
-COL_STATUS = "status"
-COL_TECNICO = "usuario_fechamento.name"
-COL_ESTADO = "dados_endereco_instalacao.estado"
-COL_TIPO = "tipo"
-COL_EXECUTOR_TIPO = "executor_tipo"
-
-STATUS_FINALIZADO = "Finalizado"
-STATUS_PENDENTE = "Pendente"
-
-STATUS_MONITORADOS = [STATUS_FINALIZADO, STATUS_PENDENTE]
+UNIDADES = {
+    "PA": [
+        "Santarém", "Alenquer", "Marabá", "Prainha", "Monte Alegre",
+        "Óbidos", "Oriximiná", "Belterra", "Mojuí dos Campos",
+        "Itaituba", "Curuá", "Uruará", "Alter do Chão",
+    ],
+    "AM": [
+        "Manaus", "Presidente Figueiredo", "Manacapuru",
+        "Rio Preto da Eva", "Iranduba", "Parintins", "Itacoatiara",
+    ],
+}
 
 # ======================================================
-# GRUPOS DE TIPO
+# CONSTANTES
+# ======================================================
+COL_TIPO = "tipo_ordem_servico"
+COL_EXECUTOR = "executor_tipo"
+
+# ======================================================
+# GRUPOS DE OS
 # ======================================================
 GRUPO_INSTALACAO = [
-    "INSTALAÇÃO (R$ 49,90) - VALOR OBRIGATÓRIO: R$ 49.90",
-    "INSTALAÇÃO (R$ 100,00) - VALOR OBRIGATÓRIO: R$ 100.00",
+    "INSTALAÇÃO (R$ 49,90)",
+    "INSTALAÇÃO (R$ 100,00)",
     "INSTALAÇÃO GRÁTIS",
     "INSTALAÇÃO PJ",
 ]
@@ -45,61 +53,57 @@ GRUPO_POS_VENDA = [
     "MANIA QUALIDADE - PÓS VENDA (INSTALAÇÃO)",
 ]
 
-GRUPO_POS_SUPORTE = [
-    "PÓS-SUPORTE",
-    "POS-SUPORTE",
-    "AMZ QUALIDADE - PÓS SUPORTE",
-]
-
 # ======================================================
 # FUNÇÕES AUXILIARES
 # ======================================================
-def contar_por_grupo(df: pd.DataFrame, tipos: list[str]) -> tuple[int, int]:
+def normalizar_cidade(valor: str) -> str:
+    return valor.strip().title() if valor else ""
+
+
+def mapear_estado(cidade: str) -> str:
+    cidade = normalizar_cidade(cidade)
+    for uf, cidades in UNIDADES.items():
+        if cidade in map(str.title, cidades):
+            return uf
+    return "OUTROS"
+
+
+def contar_por_grupo(df: pd.DataFrame, tipos: list[str]) -> int:
     if df.empty or COL_TIPO not in df.columns:
-        return 0, 0
-
-    total = df[df[COL_TIPO].isin(tipos)].shape[0]
-    pendentes = df[
-        (df[COL_TIPO].isin(tipos)) &
-        (df[COL_STATUS] == STATUS_PENDENTE)
-    ].shape[0]
-
-    return total, pendentes
+        return 0
+    return df[df[COL_TIPO].isin(tipos)].shape[0]
 
 
 def classificar_executor(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    TERCEIRIZADOS se nome contiver:
-    TEC_TERC | TEC_LOBATOS | TEC_LL
-    """
     df = df.copy()
-    df[COL_EXECUTOR_TIPO] = "CAMPO"
+    df[COL_EXECUTOR] = "CAMPO"
 
-    if COL_TECNICO in df.columns:
+    if "usuario_fechamento" in df.columns:
+
         df.loc[
-            df[COL_TECNICO].str.contains(
+            df["usuario_fechamento"].str.contains(
                 r"TEC_TERC|TEC_LOBATOS|TEC_LL",
                 case=False,
                 na=False,
-                regex=True
             ),
-            COL_EXECUTOR_TIPO
+            COL_EXECUTOR,
         ] = "TERCEIRIZADOS"
 
     return df
 
 
 def gerar_link_auditoria(row: pd.Series) -> str:
-    cliente_id = row.get("dados_cliente.Id_cliente")
+    codigo = row.get("id_cliente")
+    conta = row.get("conta")
 
-    if not cliente_id:
+    if not codigo:
         return ""
 
-    if row.get("conta") == "amazonet":
-        return f"https://amazonet.hubsoft.com.br/cliente/editar/{cliente_id}/servico"
+    if conta == "amazonet":
+        return f"https://amazonet.hubsoft.com.br/cliente/editar/{codigo}/servico"
 
-    if row.get("conta") == "mania":
-        return f"https://mania.hubsoft.com.br/cliente/editar/{cliente_id}/servico"
+    if conta == "mania":
+        return f"https://mania.hubsoft.com.br/cliente/editar/{codigo}/servico"
 
     return ""
 
@@ -114,16 +118,15 @@ def render_qualidade():
     st.session_state.setdefault("df_os", pd.DataFrame())
     st.session_state.setdefault("carregado", False)
 
-    # ======================================================
+
+    # =========================
     # SIDEBAR
-    # ======================================================
+    # =========================
     with st.sidebar:
         st.subheader("🔎 Filtros base")
 
         contas = st.multiselect(
-            "Contas",
-            ["mania", "amazonet"],
-            default=["mania", "amazonet"],
+            "Contas", ["mania", "amazonet"], default=["mania", "amazonet"]
         )
 
         hoje = date.today()
@@ -132,160 +135,139 @@ def render_qualidade():
 
         carregar = st.button("📥 Carregar ordens")
 
-    # ======================================================
+    # =========================
     # CARREGAMENTO
-    # ======================================================
+    # =========================
     if carregar:
         if not contas:
             st.warning("Selecione ao menos uma conta.")
             return
 
-        dfs = []
+        registros: list[dict] = []
 
-        with st.spinner("🔄 Carregando ordens..."):
+        with st.spinner("🔄 Carregando dados do Metabase..."):
             for conta in contas:
-                df_conta = carregar_ordens_servico_df(
-                    conta=conta,
-                    data_inicio=data_inicio,
-                    data_fim=data_fim,
-                )
+                df = carregar_fechamento_metabase(conta, data_inicio, data_fim)
+                if df is None or df.empty:
+                    continue
 
-                if df_conta is not None and not df_conta.empty:
-                    df_conta["conta"] = conta
-                    dfs.append(df_conta)
+                for row in df.to_dict("records"):
+                    row["conta"] = conta
+                    registros.append(row)
 
-        if not dfs:
+        if not registros:
             st.warning("Nenhuma ordem encontrada.")
             return
 
-        df_final = pd.concat(dfs, ignore_index=True)
-        df_final = classificar_executor(df_final)
-        df_final["link_auditoria"] = df_final.apply(gerar_link_auditoria, axis=1)
+        df_base = pd.json_normalize(registros)
 
-        st.session_state["df_os"] = df_final
+        df_base["id_cliente"] = (
+            df_base["id_cliente"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+        # Normalizações
+        df_base["cidade"] = df_base["cidade"].apply(normalizar_cidade)
+        df_base["estado"] = df_base["cidade"].apply(mapear_estado)
+        df_base["link_auditoria"] = df_base.apply(gerar_link_auditoria, axis=1)
+
+
+        df_base = classificar_executor(df_base)
+
+        st.session_state["df_os"] = df_base
         st.session_state["carregado"] = True
 
     if not st.session_state["carregado"]:
-        st.info("Selecione os filtros e clique em **📥 Carregar ordens**.")
         return
 
-    df_base = st.session_state["df_os"].copy()
-    st.success(f"✅ {len(df_base)} ordens carregadas.")
+    df_base = st.session_state["df_os"]
 
-    # ======================================================
+    # =========================
     # FILTROS
-    # ======================================================
+    # =========================
     st.subheader("🎯 Filtros de Qualidade")
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        status_opcoes = sorted(df_base[COL_STATUS].dropna().unique())
-
-        status_default = [
-            s for s in STATUS_MONITORADOS
-            if s in status_opcoes
-        ]
-
-        status_sel = st.multiselect(
-            "Status",
-            status_opcoes,
-            default=status_default,
-)
-
-
-        tecnico_sel = st.multiselect(
-            "Técnico",
-            sorted(df_base[COL_TECNICO].dropna().unique()),
+        exec_sel = st.multiselect(
+            "Executor", ["CAMPO", "TERCEIRIZADOS"], default=["CAMPO", "TERCEIRIZADOS"]
         )
-        if tecnico_sel:
-            df_base = df_base[df_base[COL_TECNICO].isin(tecnico_sel)]
+        df_base = df_base[df_base[COL_EXECUTOR].isin(exec_sel)]
 
     with c2:
         tipo_sel = st.multiselect(
-            "Tipo",
-            sorted(df_base[COL_TIPO].dropna().unique()),
+            "Tipo OS", sorted(df_base[COL_TIPO].dropna().unique())
         )
         if tipo_sel:
             df_base = df_base[df_base[COL_TIPO].isin(tipo_sel)]
 
-        executor_sel = st.multiselect(
-            "Executor",
-            ["CAMPO", "TERCEIRIZADOS"],
-            default=["CAMPO", "TERCEIRIZADOS"],
-        )
-        df_base = df_base[df_base[COL_EXECUTOR_TIPO].isin(executor_sel)]
-
     with c3:
         estado_sel = st.multiselect(
-            "Estado",
-            sorted(df_base[COL_ESTADO].dropna().unique()),
+            "Estado", sorted(df_base["estado"].dropna().unique())
         )
         if estado_sel:
-            df_base = df_base[df_base[COL_ESTADO].isin(estado_sel)]
+            df_base = df_base[df_base["estado"].isin(estado_sel)]
 
-    # ======================================================
+    # =========================
     # KPIs
-    # ======================================================
+    # =========================
     st.subheader("📌 Visão Geral – Qualidade")
-    k1, k2, k3, k4, k5, k6 = st.columns(6)
+    k1, k2, k3, k4, k5 = st.columns(5)
 
-    k1.metric("INSTALAÇÃO", *contar_por_grupo(df_base, GRUPO_INSTALACAO))
-    k2.metric("MDE.", *contar_por_grupo(df_base, GRUPO_MDE))
-    k3.metric("NCs.", *contar_por_grupo(df_base, GRUPO_NAO_CONFORMIDADE))
-    k4.metric("PÓS-VENDA", *contar_por_grupo(df_base, GRUPO_POS_VENDA))
-    k5.metric("PÓS-SUPORTE", *contar_por_grupo(df_base, GRUPO_POS_SUPORTE))
+    i = contar_por_grupo(df_base, GRUPO_INSTALACAO)
+    m = contar_por_grupo(df_base, GRUPO_MDE)
+    n = contar_por_grupo(df_base, GRUPO_NAO_CONFORMIDADE)
+    p = contar_por_grupo(df_base, GRUPO_POS_VENDA)
 
-    k6.metric("TOTAL", len(df_base))
+    k1.metric("INSTALAÇÃO", i)
+    k2.metric("MDE", m)
+    k3.metric("NCs", n)
+    k4.metric("PÓS-VENDA", p)
+    k5.metric("TOTAL", i + m + n + p)
 
-    # ======================================================
-    # TABELA FINAL ENXUTA
-    # ======================================================
+    # =========================
+    # TABELA
+    # =========================
     st.divider()
     st.subheader("📋 Ordens para Auditoria")
 
-    COLUNAS_EXIBIR = {
-        "dados_cliente.Id_cliente": "ID Cliente",
-        "dados_cliente.codigo_cliente": "Código Cliente",
-        "numero": "OS",
-        "cliente": "Cliente",
-        "tipo": "Tipo",
-        "status": "Status",
-        "descricao_fechamento": "Descrição",
-        "data_termino_executado": "Execução",
-        "data_cadastro": "Cadastro",
-        "usuario_fechamento.name": "Técnico",
+    COLUNAS = {
+        "codigo_cliente": "Código Cliente",
+        "nome_cliente": "Cliente",
+        "tipo_ordem_servico": "Tipo OS",
+        "usuario_abertura": "Usuário Abertura",
+        "usuario_fechamento": "Usuário Fechamento",
+        "motivo_fechamento": "Motivo",
         "executor_tipo": "Executor",
+        "cidade": "Cidade",
+        "estado": "UF",
         "conta": "Conta",
+        "id_cliente": "ID Cliente",
         "link_auditoria": "Auditar",
     }
 
-    colunas_existentes = [
-        col for col in COLUNAS_EXIBIR.keys()
-        if col in df_base.columns
-    ]
+    df_view = df_base[list(COLUNAS.keys())].rename(columns=COLUNAS)
+    df_view["Selecionar"] = False
 
-    df_exibir = (
-        df_base[colunas_existentes]
-        .rename(columns=COLUNAS_EXIBIR)
+    editado = st.data_editor(
+        df_view,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Selecionar": st.column_config.CheckboxColumn("Auditar"),
+            "Auditar": st.column_config.LinkColumn("Abrir"),
+        },
     )
 
-    st.dataframe(
-    df_exibir,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "Auditar": st.column_config.LinkColumn(
-            label="Auditar",
-            help="Abrir cliente no HubSoft",
-            display_text="🔍 Auditar",
-        ),
-        "Execução": st.column_config.DatetimeColumn(
-            format="DD/MM/YYYY HH:mm",
-        ),
-        "Cadastro": st.column_config.DatetimeColumn(
-            format="DD/MM/YYYY HH:mm",
-        ),
-    },
-)
+    if "df_base_auditoria" in st.session_state:
+        st.divider()
+        render_auditoria()
+
+
+    
+
+
 
 

@@ -19,6 +19,7 @@ from app.ui.naoUsado.fechamento_tecnicos_app import render
 from app.ui.qualidade_app import render_qualidade
 from app.ui.BackOffice_app import render_60_vendas
 
+
 # ======================================================
 # CONFIGURAÇÃO DA PÁGINA
 # ======================================================
@@ -93,5 +94,8 @@ elif pagina == "Qualidade":
     render_qualidade()
 elif pagina == "Back Office":
     render_60_vendas()
+elif pagina == "Auditoria":
+    render_auditoria()
+
 else:
     st.warning("Página em construção 🚧")
