@@ -249,21 +249,39 @@ def render_qualidade():
     }
 
     df_view = df_base[list(COLUNAS.keys())].rename(columns=COLUNAS)
-    df_view["Selecionar"] = False
 
     editado = st.data_editor(
         df_view,
         hide_index=True,
         use_container_width=True,
         column_config={
-            "Selecionar": st.column_config.CheckboxColumn("Auditar"),
             "Auditar": st.column_config.LinkColumn("Abrir"),
         },
     )
+   # dataframe final após filtros
+    df_filtrado = df_base.copy()
 
-    if "df_base_auditoria" in st.session_state:
-        st.divider()
+    
+
+    df_filtrado = df_base.copy()
+
+    if st.button("🔍 Iniciar Auditoria"):
+
+        if df_filtrado.empty:
+            st.warning("Não há dados para auditar.")
+        else:
+            st.session_state["df_auditoria"] = df_filtrado.copy()
+            st.session_state["df_auditoria_trabalho"] = None  # força recriar
+            st.session_state["abrir_auditoria"] = True
+            st.rerun()
+    if st.session_state.get("abrir_auditoria", False):
+        st.markdown("---")
         render_auditoria()
+
+
+
+
+
 
 
     
