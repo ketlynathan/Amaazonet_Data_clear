@@ -1,0 +1,76 @@
+{
+    "id_ordem_servico": 833553,
+    "numero": "003226042194216506",
+    "tipo": "LED LOS",
+    "tipo_ordem_servico": {
+        "id_tipo_ordem_servico": 824,
+        "descricao": "LED LOS",
+        "destino": "cliente_servico"
+    },
+    "data_inicio_programado": "2026-02-12 00:00:00",
+    "data_termino_programado": "2026-02-12 01:00:00",
+    "data_inicio_executado": "2026-02-12 10:24:35",
+    "data_termino_executado": "2026-02-12 10:26:10",
+    "data_cadastro": "2026-02-11 19:42:16",
+    "descricao_abertura": "ABERTURA DE TICKET VIA API - Fortics PBX - PROTOCOLO DA LIGAÇÃO: 20260211193253 | ATENDIMENTO ABERTO VIA API\nCliente entrou em contato informando a falta de conexão. \nCausa: Led LOS.\nTelefone: 9293462997 \nProtocolo:2026021102258\nPeríodo disponível: m/t\nSem movimentação dos equipamentos e queda de energia no local.\nCliente ciente que pode ser gerado um custo pela visita caso identificado no ato da visita danos causados pelo titular ou terceiros.",
+    "descricao_servico": "Cliente entrou em contato informando a falta de conexão. \nCausa: Led LOS.\nTelefone: 9293462997 \nProtocolo:2026021102258\nPeríodo disponível: m/t\nSem movimentação dos equipamentos e queda de energia no local.\nCliente ciente que pode ser gerado um custo pela visita caso identificado no ato da visita danos causados pelo titular ou terceiros.",
+    "descricao_fechamento": "Serviço executado com sucesso troca de conector na residência cliente restabelecido ",
+    "tempo_restante": "25h 34min",
+    "percentual_tempo_restante": 71.02,
+    "status": "Finalizado",
+    "disponibilidade": "Manhã, Tarde",
+    "atendimento": {
+        "protocolo": "20260211192047202182",
+        "id_atendimento": 2606718,
+        "id_tipo_atendimento": 69,
+        "tipo_atendimento": "LED LOS",
+        "id_status_atendimento": 3,
+        "status_atendimento": "Resolvido"
+    },
+    "motivo_fechamento": [
+        {
+            "id_motivo_fechamento": 492,
+            "descricao": "CONECTOR DANIFICADO NA RESIDÊNCIA"
+        }
+    ],
+    "agenda_ordem_servico": [],
+    "usuario_fechamento": {
+        "id": 2207,
+        "name": "Wesley Juan do Vale Ferreira_TEC_MAO"
+    },
+    "cliente": "(19930) JADERSON DA SILVA CARDOSO",
+    "dados_cliente": {
+        "id_cliente": 20262,
+        "codigo_cliente": 19930,
+        "nome_razaosocial": "JADERSON DA SILVA CARDOSO",
+        "cpf_cnpj": "75802104287",
+        "telefones": {
+            "telefone_primario": "92981002865",
+            "telefone_secundario": "92995371127",
+            "telefone_terciario": null
+        }
+    },
+    "servico": "(0) MAO_RE_COM FIDELIDADE_SUPER 50 MBPS",
+    "dados_servico": {
+        "id_cliente_servico": 28671,
+        "numero_plano": 0,
+        "descricao": "MAO_RE_COM FIDELIDADE_SUPER 50 Mbps",
+        "servico_status": "Serviço Habilitado"
+    },
+    "endereco_instalacao": "RUA PADRE FLÁVIO, 09, CASA AZUL COM PORTÃO AMARELO(PRÓX A IGREJA CATÓLICA MAMÃE MARGARIDA) - ZUMBI DOS PALMARES, MANAUS/AM | CEP: 69084-121",
+    "dados_endereco_instalacao": {
+        "endereco": "RUA PADRE FLÁVIO",
+        "numero": "09",
+        "complemento": "CASA AZUL COM PORTÃO AMARELO",
+        "referencia": "PRÓX A IGREJA CATÓLICA MAMÃE MARGARIDA",
+        "bairro": "ZUMBI DOS PALMARES",
+        "condominio": "",
+        "cidade": "MANAUS",
+        "estado": "AM",
+        "cep": "69084121",
+        "coordenadas": {
+            "latitude": -3.083232,
+            "longitude": -59.947547
+        }
+    }
+}
