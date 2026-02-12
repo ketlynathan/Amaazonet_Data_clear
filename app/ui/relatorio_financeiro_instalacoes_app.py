@@ -74,24 +74,49 @@ def render_relatorio_financeiro_instalacoes():
 
 
     # ======================================================
-    # 5️⃣ Deduplicação por cliente + OS
+    # 5️⃣ Deduplicação por cliente + OS (prioriza APROVADO)
     # ======================================================
+
+    # Criar prioridade de status
+    df["prioridade_status"] = df["status_auditoria"].astype(str).str.upper().apply(
+        lambda x: 1 if x in ["APROVADO", "N.C APROVADO", "NC APROVADO"] else 0
+    )
+
+    # Ordenação inteligente:
+    # 1️⃣ Maior prioridade primeiro (APROVADO)
+    # 2️⃣ Data mais recente depois
     df = (
-        df.sort_values("data_termino_executado", ascending=False)
+        df.sort_values(
+            ["codigo_cliente", "numero_ordem_servico", "prioridade_status", "data_termino_executado"],
+            ascending=[True, True, False, False],
+        )
         .drop_duplicates(subset=["codigo_cliente", "numero_ordem_servico"], keep="first")
         .reset_index(drop=True)
     )
+
+    # Remover coluna auxiliar
+    df.drop(columns="prioridade_status", inplace=True)
+
+    # ======================================================
+    # Continuação da sua regra CLIENTE_REPETIDO
+    # ======================================================
+
     df["CLIENTE_REPETIDO"] = (
         df.groupby("codigo_cliente")["numero_ordem_servico"].transform("nunique") > 1
     )
+
     dup = df[df["CLIENTE_REPETIDO"]]
 
     if not dup.empty:
         st.warning("⚠️ Clientes com mais de uma OS detectados")
+
         opcoes = dup.apply(
-            lambda r: f"{r['codigo_cliente']} | OS {r['numero_ordem_servico']}", axis=1
+            lambda r: f"{r['codigo_cliente']} | OS {r['numero_ordem_servico']}",
+            axis=1,
         ).unique().tolist()
+
         remover = st.multiselect("Selecione quais OS devem ser removidas", opcoes)
+
         if remover:
             remover_os = [x.split("OS")[1].strip() for x in remover]
             df = df[~df["numero_ordem_servico"].astype(str).isin(remover_os)]

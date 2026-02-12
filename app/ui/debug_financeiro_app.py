@@ -57,7 +57,7 @@ def render_debug_sheets():
         except Exception as e:
             st.error(f"Erro ao recortar colunas da 51: {e}")
 
-    # ======================================================
+   # ======================================================
     # 3️⃣ Planilha 60 — Fallback (Principal)
     # ======================================================
     st.subheader("📄 Planilha 60 (Fallback)")
@@ -65,41 +65,66 @@ def render_debug_sheets():
     with st.spinner("Lendo planilha 60..."):
         sheet_60 = read_sheet_as_dataframe("60")
 
+    # 🔎 Validação inicial
     if sheet_60.empty:
         st.error("Planilha 60 vazia.")
-    else:
-        st.write("Colunas reais da 60:")
-        st.write({i: c for i, c in enumerate(sheet_60.columns)})
-        st.dataframe(sheet_60.head(300), use_container_width=True)
+        st.stop()
 
-        try:
-            # D = 3 | E = 4 | AF = 31
-            if sheet_60.shape[1] <= 31:
-                st.error("A coluna AF (31) não existe na planilha 60.")
-            else:
-                df60_debug = sheet_60.iloc[:, [3, 4, 31]].copy()
-                df60_debug.columns = [
-                    "codigo_cliente",
-                    "codigo_os",
-                    "avaliacao_cq_instalacao",
-                ]
+    st.write("Colunas reais da 60:")
+    st.write({i: c for i, c in enumerate(sheet_60.columns)})
+    st.dataframe(sheet_60.head(300), use_container_width=True)
 
-                for c in df60_debug.columns:
-                    df60_debug[c] = df60_debug[c].astype(str).str.strip()
+    # ======================================================
+    # Extração com fallback AE → AF
+    # ======================================================
+    try:
+        # D = 3 | E = 4 | AE = 30 | AF = 31
+        COL_CLIENTE = 3
+        COL_OS = 4
+        COL_AE = 30
+        COL_AF = 31
 
-                st.subheader("🎯 Dados usados da Planilha 60")
-                st.dataframe(df60_debug.head(300), use_container_width=True)
+        if sheet_60.shape[1] <= COL_AF:
+            st.error("As colunas AE (30) ou AF (31) não existem na planilha 60.")
+            st.stop()
 
-                st.subheader("📊 Distribuição de status (60)")
-                st.dataframe(
-                    df60_debug["avaliacao_cq_instalacao"]
-                    .value_counts(dropna=False)
-                    .reset_index()
-                    .rename(columns={"index": "status", "avaliacao_cq_instalacao": "qtd"})
-                )
+        # Base cliente + OS
+        df60_debug = sheet_60.iloc[:, [COL_CLIENTE, COL_OS]].copy()
+        df60_debug.columns = ["codigo_cliente", "codigo_os"]
 
-        except Exception as e:
-            st.error(f"Erro ao recortar colunas da 60: {e}")
+        # Fallback elegante AE → AF
+        avaliacao = (
+            sheet_60.iloc[:, COL_AE]
+            .replace(["", "nan", "None"], pd.NA)
+            .fillna(sheet_60.iloc[:, COL_AF])
+            .astype(str)
+            .str.strip()
+        )
+
+        df60_debug["avaliacao_cq_instalacao"] = avaliacao
+
+        # Normalização geral
+        df60_debug = df60_debug.astype(str).apply(lambda x: x.str.strip())
+
+        # ======================================================
+        # Debug visual
+        # ======================================================
+        st.subheader("🎯 Dados usados da Planilha 60")
+        st.dataframe(df60_debug.head(300), use_container_width=True)
+
+        st.subheader("📊 Distribuição de status (60)")
+        distribuicao = (
+            df60_debug["avaliacao_cq_instalacao"]
+            .value_counts(dropna=False)
+            .reset_index()
+            .rename(columns={"index": "status", "avaliacao_cq_instalacao": "qtd"})
+        )
+
+        st.dataframe(distribuicao, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Erro ao processar Planilha 60: {e}")
+
 
 
     # ======================================================
