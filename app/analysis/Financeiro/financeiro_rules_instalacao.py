@@ -50,21 +50,31 @@ def aplicar_regras_financeiras(df: pd.DataFrame) -> pd.DataFrame:
 
     # ======================================================
     # 4️⃣ Normaliza Planilha 60
-    # D (3) Cliente | E (4) OS | AE (30) ou AF (31) Status
+    # D (3) Cliente | E (4) OS | AF (31) Status
     # ======================================================
-    status_60 = sheet_60.iloc[:, 30]
 
-    if sheet_60.shape[1] > 31:
-        status_alt = sheet_60.iloc[:, 31]
-        status_60 = status_60.fillna(status_alt)
+    # Verifica se a coluna AF existe
+    if sheet_60.shape[1] <= 31:
+        sheet_60["status_60"] = pd.NA
+    else:
+        status_60 = sheet_60.iloc[:, 31]
 
-    sheet_60 = sheet_60.iloc[:, [3, 4]].copy()
-    sheet_60["status_60"] = status_60
+        sheet_60 = sheet_60.iloc[:, [3, 4]].copy()
+        sheet_60["status_60"] = status_60
 
-    sheet_60.columns = ["codigo_cliente", "numero_ordem_servico", "status_60"]
+        sheet_60.columns = [
+            "codigo_cliente",
+            "numero_ordem_servico",
+            "status_60",
+        ]
 
-    for c in sheet_60.columns:
-        sheet_60[c] = sheet_60[c].astype(str).str.strip().str.upper()
+        for c in sheet_60.columns:
+            sheet_60[c] = (
+                sheet_60[c]
+                .astype(str)
+                .str.strip()
+                .str.upper()
+            )
 
     # ======================================================
     # 5️⃣ Merge
