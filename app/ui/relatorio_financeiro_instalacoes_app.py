@@ -243,30 +243,33 @@ def render_relatorio_financeiro_instalacoes():
     # 10️⃣ Botões PDF e Recibo
     # ======================================================
     tipo_relatorio = "instalações"
+    col1, col2, col3 = st.columns(3)
 
-    if st.button("📄 Gerar Relatório do Técnico"):
-        pdf_buffer = montar_tabela(  # agora retorna BytesIO
-            df=auditoria_df,
-            tecnico=nome_exibicao,
-            empresa=conta,
-            data_inicio=data_inicio,
-            data_fim=data_fim,
-            data_pagamento=data_pagamento,
-            total_valor=total_final,
-            logo_path=logo_path,
-            tipo_servico=tipo_relatorio,
-            
-        )
+    with col1:
+    
 
-        st.download_button(
+        if st.button("📄 Gerar Relatório do Técnico"):
+            pdf_buffer = montar_tabela(  # agora retorna BytesIO
+                df=auditoria_df,
+                tecnico=nome_exibicao,
+                empresa=conta,
+                data_inicio=data_inicio,
+                data_fim=data_fim,
+                data_pagamento=data_pagamento,
+                total_valor=total_final,
+                logo_path=logo_path,
+                tipo_servico=tipo_relatorio,
+                
+            )
+
+            st.download_button(
             "⬇️ Baixar Relatório",
             data=pdf_buffer.getvalue(),  # força bytes finais
             file_name=f"Relatorio_{nome_exibicao}.pdf",
             mime="application/pdf"
         )
+    with col1:
 
-
-    
         if st.button("🧾 Gerar Recibo"):
             pdf_buffer = gerar_recibo_pagamento(  # agora retorna BytesIO
                 tecnico=nome_exibicao,
