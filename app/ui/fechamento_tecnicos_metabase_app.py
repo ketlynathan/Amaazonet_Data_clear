@@ -78,6 +78,8 @@ def render_fechamento_metabase():
     st.session_state.setdefault("df_base", pd.DataFrame())
     st.session_state.setdefault("carregado", False)
 
+    
+
     # =========================
     # SIDEBAR
     # =========================
@@ -95,6 +97,11 @@ def render_fechamento_metabase():
         data_fim = st.date_input("Data fim", hoje)
 
         gerar = st.button("📊 Gerar relatório")
+
+    # 🔥 SALVA SEMPRE O PERÍODO SELECIONADO
+    st.session_state["periodo_inicio"] = data_inicio
+    st.session_state["periodo_fim"] = data_fim
+
 
     # =========================
     # CARREGAMENTO

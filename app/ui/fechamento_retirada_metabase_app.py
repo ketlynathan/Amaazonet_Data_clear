@@ -91,8 +91,9 @@ def render_retirada_metabase():
         st.subheader("🔎 Filtros base")
 
         contas = st.multiselect(
-            "Contas", ["mania", "amazonet"],
-            default=["amazonet", "mania"]
+            "Contas",
+            ["mania", "amazonet"],
+            default=["amazonet", "mania"],
         )
 
         hoje = date.today()
@@ -100,7 +101,10 @@ def render_retirada_metabase():
         data_fim = st.date_input("Data fim", hoje)
 
         gerar = st.button("📊 Gerar relatório")
-        st.session_state.setdefault("df_fechamento_filtrado", pd.DataFrame())
+
+    # 🔥 SALVA O PERÍODO SEMPRE (já convertido)
+    st.session_state["periodo_inicio"] = pd.to_datetime(data_inicio)
+    st.session_state["periodo_fim"] = pd.to_datetime(data_fim)
 
     # =========================
     # CARREGAMENTO

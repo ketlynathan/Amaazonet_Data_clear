@@ -58,20 +58,20 @@ def render_relatorio_financeiro_instalacoes():
         st.warning("Nenhum registro para este técnico.")
         return
 
-    # ======================================================
-    # 4️⃣ Datas de referência
-    # ======================================================
-    df["data_termino_executado"] = pd.to_datetime(
-        df["data_termino_executado"], dayfirst=True, errors="coerce"
-    )
 
-    data_fim = df["data_termino_executado"].max()
-    if pd.isna(data_fim):
-        st.warning("Sem data válida de término.")
+    # ======================================================
+    # 4️⃣ Datas de referência (vindas do filtro principal)
+    # ======================================================
+
+    data_inicio = st.session_state.get("periodo_inicio")
+    data_fim = st.session_state.get("periodo_fim")
+
+    if not data_inicio or not data_fim:
+        st.warning("Período não definido.")
         return
 
-    data_inicio = data_fim - timedelta(days=6)
-    data_pagamento = data_fim + timedelta(days=1)
+    data_pagamento = pd.to_datetime(data_fim) + timedelta(days=1)
+
 
     # ======================================================
     # 5️⃣ Deduplicação por cliente + OS

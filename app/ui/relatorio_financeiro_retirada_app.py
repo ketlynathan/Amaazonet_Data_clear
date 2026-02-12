@@ -151,8 +151,21 @@ def render_relatorio_financeiro_retirada():
         return
 
     # Datas
-    data_fim = df["data_termino_executado"].max()
-    data_inicio = data_fim - timedelta(days=5)
+    data_inicio = st.session_state.get("periodo_inicio")
+    data_fim = st.session_state.get("periodo_fim")
+
+    if not data_inicio or not data_fim:
+        st.warning("Período não definido.")
+        st.stop()
+
+    # garante pegar o dia inteiro
+    data_fim = data_fim + timedelta(days=1) - timedelta(seconds=1)
+
+    df_periodo = df[
+        (df["data_termino_executado"] >= data_inicio) &
+        (df["data_termino_executado"] <= data_fim)
+    ]
+
     data_pagamento = (data_fim + timedelta(days=1)).normalize()
 
     # Planilha 39 para pagamento
